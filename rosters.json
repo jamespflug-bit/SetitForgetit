@@ -1,4 +1,62 @@
 {
-  "order": [],
-  "rosters": {}
+  "order": [
+    "Jeff",
+    "Steve",
+    "James",
+    "Dave",
+    "Joe",
+    "Greg",
+    "Andy",
+    "Mike"
+  ],
+  "rosters": {
+    "Jeff": [
+      "LAR",
+      "KC",
+      "CHI",
+      "MIA"
+    ],
+    "Steve": [
+      "BUF",
+      "NO",
+      "NYG",
+      "CLE"
+    ],
+    "James": [
+      "BAL",
+      "CIN",
+      "SF",
+      "NYJ"
+    ],
+    "Dave": [
+      "HOU",
+      "DET",
+      "MIN",
+      "ARI"
+    ],
+    "Joe": [
+      "DEN",
+      "PHI",
+      "TB",
+      "WAS"
+    ],
+    "Greg": [
+      "SEA",
+      "DAL",
+      "PIT",
+      "TEN"
+    ],
+    "Andy": [
+      "NE",
+      "GB",
+      "CAR",
+      "ATL"
+    ],
+    "Mike": [
+      "JAX",
+      "LAC",
+      "IND",
+      "LV"
+    ]
+  }
 }
