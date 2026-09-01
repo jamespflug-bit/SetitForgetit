@@ -317,6 +317,43 @@ input{font-family:inherit;font-size:inherit;color:inherit}
 .wchip[aria-pressed="true"]{background:var(--flag-ink);color:var(--flag);border-color:var(--flag-ink)}
 .wchip[disabled]{opacity:.32;cursor:not-allowed}
 
+.nowband{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.nowband.solo{grid-template-columns:minmax(0,1fr)}
+.nowbox{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.nowhead{display:flex;align-items:baseline;gap:10px;padding:7px 14px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.nowhead h3{
+  font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:22px;margin:0;
+  text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px;
+}
+.onair{width:10px;height:10px;border-radius:50%;background:#D33A1F;animation:blip 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.onair{animation:none}}
+.nowwhen{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.nowlist{display:flex;flex-direction:column;padding:4px 6px 6px;gap:3px;overflow:auto;max-height:190px}
+.nowrow{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;
+  padding:6px 10px;border-radius:3px;
+}
+.nowrow:nth-child(odd){background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.nowside{display:flex;flex-direction:column;min-width:0}
+.nowside.r{align-items:flex-end;text-align:right}
+.nowwho{
+  font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;
+  font-size:clamp(22px,1.55vw,30px);line-height:1;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;overflow:hidden;max-width:100%;
+}
+.nowside.lead .nowwho{color:var(--ink)}
+.nowside.none .nowwho{font-size:16px;font-weight:700;letter-spacing:.06em;opacity:.6}
+.nowteam{display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;font-weight:700;color:var(--ink-soft);margin-top:2px}
+.nowside.r .nowteam{flex-direction:row-reverse}
+.nowteam i{width:8px;height:14px;border-radius:2px;flex:0 0 auto}
+.nowteam span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nowmid{text-align:center;white-space:nowrap;min-width:96px}
+.nowscore{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:21px;line-height:1}
+.nowclock{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.nowkick{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;line-height:1}
+.nowtv{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.nowempty{padding:14px;color:var(--muted);font-size:13.5px}
+
 .seasonmain{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:10px}
 .wkrows{flex:1 1 auto;min-height:0;overflow:auto;padding:6px 8px;display:flex;flex-direction:column;gap:5px}
 .wkrow{
@@ -423,6 +460,12 @@ input{font-family:inherit;font-size:inherit;color:inherit}
   .lrow{grid-template-columns:44px minmax(0,1fr) auto;row-gap:6px}
   .lmoney{grid-column:3;font-size:22px;min-width:0}
   .lrank{font-size:34px}
+  .nowband{grid-template-columns:minmax(0,1fr)}
+  .nowlist{max-height:none}
+  .nowwho{font-size:21px}
+  .nowmid{min-width:74px}
+  .phead{flex-wrap:wrap}
+  .wkteams{white-space:normal;overflow:visible}
 }
 </style>
 
@@ -435,9 +478,9 @@ input{font-family:inherit;font-size:inherit;color:inherit}
       <div class="brandmark">Set It <em>&amp;</em> Forget It <em>·</em> Draft Board</div>
     </div>
     <nav class="tabs" id="tabs">
-      <button class="tab" data-tab="draft" aria-pressed="true">Draft</button>
-      <button class="tab" data-tab="season" aria-pressed="false">Season</button>
       <button class="tab" data-tab="leader" aria-pressed="false">Leaderboard</button>
+      <button class="tab" data-tab="season" aria-pressed="false">Season</button>
+      <button class="tab" data-tab="draft" aria-pressed="true">Draft</button>
     </nav>
     <div class="spacer"></div>
     <div class="btn-row" id="topActions"></div>
@@ -712,10 +755,14 @@ function liveRosters(){
 }
 const seasonReady = () => !!liveRosters();
 
-/* Once rosters.json is in the repo the draft is over, so the Draft tab comes
-   off the page entirely — nobody can wander in and redraw the board. Add
-   ?draft=1 to the URL to bring it back (next August, or to fix a bad entry). */
+/* Three states, checked in this order:
+   1. "draftClosed": true in rosters.json — the hard off switch. The tab is gone
+      and ?draft=1 will not bring it back. Set it to false to reopen.
+   2. ?draft=1 in the URL — the soft escape hatch, for next August.
+   3. rosters.json carries real rosters — the draft is over, so the tab hides,
+      but anyone who knows the ?draft=1 trick can still get in.               */
 function draftLocked(){
+  if(SEASON.draftClosed === true) return true;
   try{ if(new URLSearchParams(location.search).has("draft")) return false; }catch(e){}
   const r = liveRosters();
   return !!(r && r.source === "published");
@@ -767,7 +814,7 @@ function weekByNumber(x){ return SEASON.weeks.find(w=>w.n===x) || null; }
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
 const FROM_ESPN = {WSH:"WAS"};
 const fromEspn = a => FROM_ESPN[a] || a;
-let LIVE = {on:false, at:null, inProgress:0, scheduled:0, error:null};
+let LIVE = {on:false, at:null, inProgress:0, scheduled:0, error:null, games:[], week:0};
 /* True only where the page can read its own sibling files — i.e. hosted on
    GitHub Pages. Inside the artifact sandbox every request is refused, and a
    browser-initiated download would be refused too, so the download button
@@ -791,11 +838,13 @@ async function fetchWeek(w){
   if(!res.ok) throw new Error("HTTP "+res.status);
   const j = await res.json();
   const results={}; let done=0, inProgress=0, scheduled=0, last=null;
+  const games=[];
   (j.events||[]).forEach(ev=>{
     const c=(ev.competitions||[])[0]; if(!c) return;
     const st=(c.status&&c.status.type)||{};
     const cs=c.competitors||[];
     if(cs.length!==2) return;
+    games.push(parseGame(ev,c,st,cs));
     if(st.completed){
       done++;
       if(ev.date && (!last || ev.date>last)) last=ev.date;
@@ -814,32 +863,106 @@ async function fetchWeek(w){
     else if(st.state==="in") inProgress++;
     else scheduled++;
   });
-  const out={n:w, results, done, inProgress, scheduled,
+  const out={n:w, results, done, inProgress, scheduled, games,
              complete: done>0 && inProgress===0 && scheduled===0,
              through: last ? last.slice(0,10) : null};
-  if(out.complete) cacheSet(key,out);
+  // cache finished weeks without the per-game detail — it never gets looked at again
+  if(out.complete) cacheSet(key, Object.assign({}, out, {games:[]}));
   return out;
+}
+
+/* One game, flattened. Field names verified against a real ESPN response:
+   competition.status = {clock, displayClock, period, type:{state,completed,shortDetail,...}}
+   Live games were not observable in August, so the clock string falls back
+   through shortDetail -> period/displayClock -> a plain label.            */
+function parseGame(ev, c, st, cs){
+  const home = cs.find(x=>x.homeAway==="home") || cs[0];
+  const away = cs.find(x=>x.homeAway==="away") || cs[1];
+  const side = x => ({
+    id: fromEspn(x.team && x.team.abbreviation),
+    name: (x.team && x.team.shortDisplayName) || (x.team && x.team.name) || "",
+    score: Number(x.score),
+    record: ((x.records||[]).find(r=>r.name==="overall")||{}).summary || ""
+  });
+  const state = st.state || (st.completed ? "post" : "pre");
+  const stat = c.status || {};
+  let clock = "";
+  if(state === "in"){
+    if(st.name === "STATUS_HALFTIME") clock = "Halftime";
+    else if(st.shortDetail) clock = st.shortDetail;
+    else if(stat.period) clock = "Q" + stat.period + (stat.displayClock ? " · " + stat.displayClock : "");
+    else clock = "In progress";
+  }
+  return {
+    id: ev.id, date: ev.date, state,
+    clock, detail: st.shortDetail || st.detail || "",
+    home: side(home), away: side(away),
+    tv: ((c.broadcasts||[]).find(b=>b.market==="national") || (c.broadcasts||[])[0] || {names:[]}).names[0] || ""
+  };
+}
+
+/* teamId -> what that team is doing right now */
+function liveMapFrom(games){
+  const m = {};
+  (games||[]).forEach(g=>{
+    if(g.state === "post") return;
+    const pair = [[g.home, g.away], [g.away, g.home]];
+    pair.forEach(([me, them])=>{
+      const leading = g.state==="in" && Number.isFinite(me.score) && Number.isFinite(them.score) && me.score > them.score;
+      const tied    = g.state==="in" && me.score === them.score;
+      m[me.id] = {state:g.state, leading, tied, me, them, game:g};
+    });
+  });
+  return m;
 }
 
 async function loadLiveSeason(){
   const upto = nflWeekNow();
-  if(upto < 1) return false;
-  const weeks=[]; let inProgress=0, scheduled=0;
+  const weeks=[]; let inProgress=0, scheduled=0, tail=null;
+
+  // Before kickoff week there is nothing played, but week 1's schedule still
+  // answers "who's up next", so fetch it anyway.
+  if(upto < 1){
+    const first = await fetchWeek(1);
+    LIVE = Object.assign(LIVE, {on:true, at:new Date(), inProgress:0, scheduled:first.scheduled,
+                                error:null, games:(first.games||[]).filter(g=>g.state!=="post"), week:1});
+    return false;                                     // no results to show yet
+  }
+
   for(let w=1; w<=upto; w++){
     let got;
     try{ got = await fetchWeek(w); }
     catch(e){ if(w===1) throw e; break; }             // week 1 failing means no access at all
-    if(!got.done && !got.inProgress) break;           // week hasn't kicked off yet
+    tail = got;
+    if(!got.done && !got.inProgress){                 // week hasn't kicked off yet
+      break;
+    }
     inProgress+=got.inProgress; scheduled+=got.scheduled;
     if(got.done) weeks.push(got);
   }
-  if(!weeks.length) return false;
+
+  let games = tail ? (tail.games||[]).filter(g=>g.state!=="post") : [];
+  let gweek = tail ? tail.n : 0;
+  // everything in this week is final — reach forward so "up next" still speaks
+  if(!games.length && upto < SEASON.totalWeeks){
+    try{
+      const nxt = await fetchWeek(upto+1);
+      games = (nxt.games||[]).filter(g=>g.state!=="post");
+      gweek = upto+1;
+    }catch(e){}
+  }
+
+  if(!weeks.length){
+    LIVE = Object.assign(LIVE, {on:true, at:new Date(), inProgress, scheduled, error:null, games, week:gweek});
+    return false;
+  }
+
   const recaps = SEASON.recaps || {};
   SEASON.weeks = weeks.map(w=>({
     n:w.n, through:w.through, results:w.results,
     recap: recaps[String(w.n)] || (SEASON.weeks.find(x=>x.n===w.n)||{}).recap || autoRecap(w)
   }));
-  LIVE = {on:true, at:new Date(), inProgress, scheduled, error:null};
+  LIVE = {on:true, at:new Date(), inProgress, scheduled, error:null, games, week:gweek};
   return true;
 }
 
@@ -871,6 +994,7 @@ async function loadSideFiles(){
   if(ros && ros.order && ros.rosters && ros.order.length){
     SEASON.order = ros.order; SEASON.rosters = ros.rosters;
   }
+  if(ros && typeof ros.draftClosed === "boolean") SEASON.draftClosed = ros.draftClosed;
   if(rec && typeof rec === "object") SEASON.recaps = rec;
 }
 
@@ -899,17 +1023,142 @@ function liveBadge(){
   return `<span class="livedot">live from ESPN · ${t}${open}</span>`;
 }
 
+/* ================= WHO'S PLAYING =================
+   Owner-first: the question is "who has a game on right now, and who's next",
+   not "what is the score". Scores and the clock ride along when ESPN has them
+   and are simply left off when it doesn't — the schedule alone is enough. */
+function ownerOf(rost, teamId){
+  for(const nm of rost.order){ if((rost.rosters[nm]||[]).includes(teamId)) return nm; }
+  return null;
+}
+function relTime(iso){
+  const t = new Date(iso).getTime();
+  if(isNaN(t)) return "";
+  const mins = Math.round((t - Date.now())/60000);
+  if(mins <= 0) return "now";
+  if(mins < 60) return `in ${mins} min`;
+  const h = Math.floor(mins/60), m = mins % 60;
+  if(h < 24) return m ? `in ${h}h ${m}m` : `in ${h}h`;
+  return `in ${Math.round(h/24)} day${Math.round(h/24)===1?"":"s"}`;
+}
+function clockTime(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return "";
+  return d.toLocaleString("en-US",{weekday:"short",hour:"numeric",minute:"2-digit"});
+}
+
+/* One row per game, both brothers named. Every NFL team is owned in this
+   league, so a row per owner would print each game twice. */
+function gameRows(rost, games, state){
+  return games.filter(g=>g.state===state).map(g=>({
+    g,
+    away: {t:g.away, who: ownerOf(rost, g.away.id)},
+    home: {t:g.home, who: ownerOf(rost, g.home.id)}
+  })).filter(r=>r.away.who || r.home.who);
+}
+
+function nowBand(rost){
+  const games = LIVE.games || [];
+  if(!games.length) return "";
+
+  const live = gameRows(rost, games, "in");
+  const pre  = gameRows(rost, games, "pre").sort((a,b)=> new Date(a.g.date) - new Date(b.g.date));
+
+  // "up next" is the next kickoff, not the rest of the week
+  let nextRows = [], nextAt = null, laterCount = 0;
+  if(pre.length){
+    nextAt = pre[0].g.date;
+    nextRows = pre.filter(r=>r.g.date === nextAt);
+    laterCount = pre.length - nextRows.length;
+  }
+  if(!live.length && !nextRows.length) return "";
+
+  const side = (sd, other, right, liveGame) => {
+    const t = teamById(sd.t.id);
+    const lead = liveGame && Number.isFinite(sd.t.score) && Number.isFinite(other.t.score) && sd.t.score > other.t.score;
+    return `<div class="nowside${right?" r":""}${lead?" lead":""}${sd.who?"":" none"}">
+      <div class="nowwho">${esc(sd.who || "unowned")}</div>
+      <div class="nowteam">${t?`<i style="background:${t.c1}"></i>`:""}<span>${esc(sd.t.name)}</span></div>
+    </div>`;
+  };
+
+  const liveBox = !live.length ? "" :
+    `<div class="nowbox">
+       <div class="nowhead">
+         <h3><span class="onair"></span>On now</h3>
+         <div class="nowwhen">${live.length} game${live.length===1?"":"s"} in progress</div>
+       </div>
+       <div class="nowlist">
+         ${live.map(r=>`
+           <div class="nowrow">
+             ${side(r.away, r.home, false, true)}
+             <div class="nowmid">
+               ${Number.isFinite(r.away.t.score)&&Number.isFinite(r.home.t.score)
+                  ? `<div class="nowscore">${r.away.t.score} – ${r.home.t.score}</div>` : `<div class="nowscore">vs</div>`}
+               ${r.g.clock ? `<div class="nowclock">${esc(r.g.clock)}</div>` : ""}
+             </div>
+             ${side(r.home, r.away, true, true)}
+           </div>`).join("")}
+       </div>
+     </div>`;
+
+  const nextBox = !nextRows.length ? "" :
+    `<div class="nowbox">
+       <div class="nowhead">
+         <h3>Up next</h3>
+         <div class="nowwhen">${esc(clockTime(nextAt))} · ${esc(relTime(nextAt))}${laterCount?` · ${laterCount} more after`:""}</div>
+       </div>
+       <div class="nowlist">
+         ${nextRows.map(r=>`
+           <div class="nowrow">
+             ${side(r.away, r.home, false, false)}
+             <div class="nowmid">
+               <div class="nowkick">${r.g.tv?esc(r.g.tv):"at"}</div>
+             </div>
+             ${side(r.home, r.away, true, false)}
+           </div>`).join("")}
+       </div>
+     </div>`;
+
+  return `<div class="nowband${(liveBox&&nextBox)?"":" solo"}">${liveBox}${nextBox}</div>`;
+}
+
+/* Poll while something is live, or as a kickoff approaches. Nothing running
+   means no polling at all. */
+let nowTimer = null;
+function scheduleLiveRefresh(){
+  clearTimeout(nowTimer);
+  const games = LIVE.games || [];
+  if(!games.length || !LIVE.on) return;
+  const anyLive = games.some(g=>g.state==="in");
+  const soon = games.some(g=>{
+    const d = new Date(g.date).getTime();
+    return g.state==="pre" && d - Date.now() < 30*60000;
+  });
+  if(!anyLive && !soon) return;
+  nowTimer = setTimeout(async ()=>{
+    try{
+      if(await loadLiveSeason()){
+        if(ui.tab==="season") renderSeason();
+        else if(ui.tab==="leader") renderLeader();
+      }
+    }catch(e){}
+    scheduleLiveRefresh();
+  }, 60000);
+}
+
 /* ================= SEASON VIEW ================= */
 function renderSeason(){
   const host=document.getElementById("seasonBody");
   const rost=liveRosters();
   if(!rost || !SEASON.weeks.length){
-    host.innerHTML = lockedPanel(
+    host.innerHTML = (rost ? nowBand(rost) : "") + lockedPanel(
       rost ? "No games yet" : "Nothing to track yet",
       rost
         ? `Rosters are locked in. The season opens ${fmtDate(SEASON.seasonStart)} and results land here on their own as games finish — nobody has to type anything in. The Leaderboard tab has everyone's four teams in the meantime.`
         : "The season view switches on once all 32 picks are in. Finish the draft on the Draft tab and this fills itself in from there."
     );
+    scheduleLiveRefresh();
     return;
   }
   if(ui.week==null || !weekByNumber(ui.week)) ui.week = latestWeek();
@@ -932,6 +1181,7 @@ function renderSeason(){
        <div class="recap-body">${esc(wk.recap||"No notes this week.")}</div>
        <div class="weekpick">${chips}</div>
      </div>
+     ${wk.n === LIVE.week || (LIVE.week && ui.week === latestWeek()) ? nowBand(rost) : ""}
      <div class="seasonmain">
        <section class="panel">
          <div class="phead"><h2>Week ${wk.n}</h2><span class="note">best to worst</span><div class="spacer"></div>${liveBadge()}</div>
@@ -958,12 +1208,17 @@ function renderSeason(){
     c.onclick=()=>{ ui.week=+c.dataset.week; renderSeason(); };
   });
   scheduleFit();
+  scheduleLiveRefresh();
 }
 
 function teamMark(id, wk){
   const t=teamById(id); if(!t) return "";
   const r = wk && wk.results ? wk.results[id] : null;
-  const mark = r==="W" ? "✓" : r==="L" ? "✕" : r==="T" ? "=" : "–";
+  let mark = r==="W" ? "✓" : r==="L" ? "✕" : r==="T" ? "=" : "–";
+  // playing right now, in the week being shown
+  if(!r && wk && wk.n === LIVE.week && (LIVE.games||[]).some(g=>g.state==="in" && (g.home.id===id || g.away.id===id))){
+    mark = "●";
+  }
   return `${esc(t.name)} ${mark}`;
 }
 function seasonTable(rost){
@@ -1522,7 +1777,7 @@ function buildExport(fmt){
       rosters[nm]=[];
       for(let r=0;r<S.rounds;r++){ const p=S.picks[pickIndexFor(pi,r)]; if(p) rosters[nm].push(p.team); }
     });
-    return JSON.stringify({order:S.players.slice(), rosters}, null, 2);
+    return JSON.stringify({draftClosed:true, order:S.players.slice(), rosters}, null, 2);
   }
   return S.picks.map((p,k)=>{
     const s=slotForPick(k), t=teamById(p.team);
