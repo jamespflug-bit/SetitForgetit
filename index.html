@@ -712,6 +712,15 @@ function liveRosters(){
 }
 const seasonReady = () => !!liveRosters();
 
+/* Once rosters.json is in the repo the draft is over, so the Draft tab comes
+   off the page entirely — nobody can wander in and redraw the board. Add
+   ?draft=1 to the URL to bring it back (next August, or to fix a bad entry). */
+function draftLocked(){
+  try{ if(new URLSearchParams(location.search).has("draft")) return false; }catch(e){}
+  const r = liveRosters();
+  return !!(r && r.source === "published");
+}
+
 function weekRecord(owner, wk, rost){
   let w=0,l=0,t=0,played=0;
   (rost.rosters[owner]||[]).forEach(id=>{
@@ -759,6 +768,11 @@ const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/sc
 const FROM_ESPN = {WSH:"WAS"};
 const fromEspn = a => FROM_ESPN[a] || a;
 let LIVE = {on:false, at:null, inProgress:0, scheduled:0, error:null};
+/* True only where the page can read its own sibling files — i.e. hosted on
+   GitHub Pages. Inside the artifact sandbox every request is refused, and a
+   browser-initiated download would be refused too, so the download button
+   stays hidden there and Copy is the way out. */
+let HOSTED = false;
 
 function nflWeekNow(){
   const start = new Date(SEASON.seasonStart+"T00:00:00-04:00");
@@ -848,6 +862,7 @@ async function loadSideFiles(){
   const grab = async (file)=>{
     try{
       const r = await fetch(file, {cache:"no-store"});
+      HOSTED = true;                                   // the request itself was allowed
       if(!r.ok) return null;
       return await r.json();
     }catch(e){ return null; }
@@ -871,7 +886,8 @@ async function bootLive(){
     ui.week=null;
     /* Land on the results once they exist — unless someone is mid-draft or
        has already chosen a tab for themselves. */
-    if(!ui.tabTouched && SEASON.weeks.length && S.phase!=="draft") ui.tab="season";
+    if(draftLocked()) ui.tab = SEASON.weeks.length ? "season" : "leader";
+    else if(!ui.tabTouched && SEASON.weeks.length && S.phase!=="draft") ui.tab="season";
     render();
   }
 }
@@ -891,7 +907,7 @@ function renderSeason(){
     host.innerHTML = lockedPanel(
       rost ? "No games yet" : "Nothing to track yet",
       rost
-        ? `Rosters are locked in. The first update lands the Tuesday morning after week 1 — the season opens ${fmtDate(SEASON.seasonStart)} — and every Tuesday after that, on its own.`
+        ? `Rosters are locked in. The season opens ${fmtDate(SEASON.seasonStart)} and results land here on their own as games finish — nobody has to type anything in. The Leaderboard tab has everyone's four teams in the meantime.`
         : "The season view switches on once all 32 picks are in. Finish the draft on the Draft tab and this fills itself in from there."
     );
     return;
@@ -976,8 +992,11 @@ function renderLeader(){
       "It opens the moment the draft is done — 32 picks, everybody with four teams. Until then there is nothing to be smug about.");
     return;
   }
-  const table = standings(rost);
   const played = SEASON.weeks.length;
+  /* Nobody leads before kickoff — with everyone at 0-0 a "ranking" is just
+     alphabetical order wearing a gold border. Show draft order instead. */
+  const table = played ? standings(rost)
+                       : rost.order.map(nm=>({nm, r:totalRecord(nm,rost)}));
   const lastIdx = table.length-1;
   /* Money stays off the board until the season is actually over. */
   const final = played >= SEASON.totalWeeks;
@@ -997,10 +1016,10 @@ function renderLeader(){
        <div class="recap-body">${esc(blurb)}</div>
      </div>
      <section class="panel" style="flex:1 1 auto;min-height:0">
-       <div class="phead"><h2>Leaderboard</h2><span class="note">${played?played+" of "+SEASON.totalWeeks+" weeks played":"0 weeks played"}</span><div class="spacer"></div>${liveBadge()}</div>
+       <div class="phead"><h2>${played?"Leaderboard":"The Rosters"}</h2><span class="note">${played?played+" of "+SEASON.totalWeeks+" weeks played":"in draft order · nobody leads yet"}</span><div class="spacer"></div>${liveBadge()}</div>
        <div class="ladder${final?"":" no-money"}">
          ${table.map((s,i)=>`
-           <div class="lrow ${i===0?"p1":i===1?"p2":""} ${i===lastIdx&&played?"plast":""}">
+           <div class="lrow ${played&&i===0?"p1":played&&i===1?"p2":""} ${i===lastIdx&&played?"plast":""}">
              <div class="lrank">${i+1}</div>
              <div>
                <div class="lname">${esc(s.nm)}</div>
@@ -1009,7 +1028,7 @@ function renderLeader(){
                  return `<span class="lteam"><i style="background:${t.c1}"></i>${esc(t.name)}${played?" "+teamRecord(id):""}</span>`;
                }).join("")}</div>
              </div>
-             <div class="lrec">${s.r.str}<small>${played?(s.r.pct*100).toFixed(0)+"%":"not started"}</small></div>
+             <div class="lrec">${played?s.r.str:"—"}<small>${played?(s.r.pct*100).toFixed(0)+"%":"pick "+(i+1)}</small></div>
              ${final?`<div class="lmoney">${i===0?MONEY[1]:i===1?MONEY[2]:i===lastIdx?MONEY_LAST:"—"}</div>`:""}
            </div>`).join("")}
        </div>
@@ -1515,9 +1534,10 @@ function openExport(){
   document.getElementById("exportText").value=buildExport(ui.exportFmt);
   document.getElementById("exportNote").textContent =
     ui.exportFmt==="sheet" ? "Columns line up with the Teams block in the spreadsheet."
-    : ui.exportFmt==="rosters" ? "Save this as rosters.json in the website repo to switch the season on."
+    : ui.exportFmt==="rosters" ? (HOSTED ? "Save this as rosters.json in the website repo to switch the season on."
+                                          : "Copy this into rosters.json in the website repo to switch the season on.")
     : "";
-  document.getElementById("dlExport").classList.toggle("hide", ui.exportFmt!=="rosters");
+  document.getElementById("dlExport").classList.toggle("hide", ui.exportFmt!=="rosters" || !HOSTED);
 }
 document.getElementById("closeSheet").onclick=()=>document.getElementById("exportSheet").classList.add("hide");
 document.getElementById("exportSheet").addEventListener("click", e=>{ if(e.target.id==="exportSheet") e.currentTarget.classList.add("hide"); });
@@ -1563,7 +1583,9 @@ setInterval(()=>{
 
 function renderTabs(){
   const ready = seasonReady();
+  const hideDraft = draftLocked();
   document.querySelectorAll("#tabs .tab").forEach(b=>{
+    if(b.dataset.tab==="draft") b.classList.toggle("hide", hideDraft);
     const locked = (b.dataset.tab!=="draft") && !ready;
     b.classList.toggle("locked", locked);
     b.setAttribute("aria-pressed", String(b.dataset.tab===ui.tab));
@@ -1578,6 +1600,7 @@ document.getElementById("tabs").addEventListener("click", e=>{
 });
 
 function render(){
+  if(draftLocked() && ui.tab==="draft") ui.tab = SEASON.weeks.length ? "season" : "leader";
   const tab=ui.tab;
   const draftTab = tab==="draft";
   const setup = draftTab && S.phase==="setup";
