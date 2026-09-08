@@ -301,14 +301,14 @@ input{font-family:inherit;font-size:inherit;color:inherit}
 
 .recapcard{
   flex:0 0 auto;background:var(--flag);color:var(--flag-ink);border-radius:var(--r);
-  padding:14px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  padding:11px 22px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden;
 }
 .recapcard::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0 1px,transparent 1px 76px)}
 .recap-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
-.recap-week{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:46px;line-height:.9;text-transform:uppercase}
+.recap-week{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:40px;line-height:.9;text-transform:uppercase}
 .recap-when{font-size:14px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.72}
-.recap-body{position:relative;z-index:1;font-size:clamp(17px,1.35vw,23px);line-height:1.42;margin-top:6px;max-width:118ch;font-weight:500}
+.recap-body{position:relative;z-index:1;font-size:clamp(16px,1.25vw,21px);line-height:1.4;margin-top:5px;max-width:118ch;font-weight:500}
 .weekpick{display:flex;gap:4px;flex-wrap:wrap;align-items:center;position:relative;z-index:1;margin-top:10px}
 .wchip{
   background:rgba(0,0,0,.12);border:1px solid rgba(0,0,0,.2);border-radius:3px;color:inherit;
@@ -326,9 +326,36 @@ input{font-family:inherit;font-size:inherit;color:inherit}
   text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px;
 }
 .onair{width:10px;height:10px;border-radius:50%;background:#D33A1F;animation:blip 1.6s ease-in-out infinite}
+/* The draft board is a fixed screen-share surface and must never scroll.
+   Season and Leaderboard are pages you read, so they get to be as tall as
+   their content — which is what lets the whole slate show at once. */
+body.page-scroll{overflow:auto}
+body.page-scroll .app{height:auto;min-height:100vh}
+body.page-scroll .seasonwrap{min-height:0}
+body.page-scroll .nowlist,
+body.page-scroll .nowband.solo .nowlist{max-height:none;overflow:visible}
+body.page-scroll .wkrows,body.page-scroll .ladder{overflow:visible}
+body.page-scroll .wkrow,body.page-scroll .lrow{flex:0 0 auto}
+body.page-scroll .seasonmain{align-items:start}
+body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
+
 @media (prefers-reduced-motion:reduce){.onair{animation:none}}
 .nowwhen{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.nowlist{display:flex;flex-direction:column;padding:4px 6px 6px;gap:3px;overflow:auto;max-height:190px}
+.nowlist{display:flex;flex-direction:column;padding:4px 6px 6px;gap:3px;overflow:auto;max-height:min(31vh,300px)}
+.nowband.solo .nowlist{max-height:min(44vh,440px)}
+.nowbox.next .nowrow{padding:3px 10px}
+.nowbox.next .nowwho{font-size:clamp(19px,1.3vw,25px)}
+.nowbox.next .nowteam{font-size:12px;margin-top:1px}
+.nowgroup{
+  display:flex;align-items:baseline;gap:10px;padding:7px 10px 3px;position:sticky;top:0;
+  background:var(--surface);z-index:1;
+}
+.nowgroup b{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink);
+}
+.nowgroup span{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.nowgroup.first b{color:var(--ink)}
+.nowgroup::after{content:"";flex:1 1 auto;border-bottom:1px solid var(--rule);transform:translateY(-3px)}
 .nowrow{
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;
   padding:6px 10px;border-radius:3px;
@@ -358,7 +385,8 @@ input{font-family:inherit;font-size:inherit;color:inherit}
 .wkrows{flex:1 1 auto;min-height:0;overflow:auto;padding:6px 8px;display:flex;flex-direction:column;gap:5px}
 .wkrow{
   display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;
-  border-radius:4px;padding:6px 10px 6px 14px;border:1px solid var(--rule);background:var(--ground);flex:1 1 0;min-height:52px;
+  border-radius:4px;padding:6px 10px 6px 14px;border:1px solid var(--rule);background:var(--ground);
+  flex:1 1 auto;min-height:56px;overflow:hidden;
 }
 .wkrow{position:relative}
 .wkrow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:4px 0 0 4px;background:var(--rule-strong)}
@@ -367,7 +395,7 @@ input{font-family:inherit;font-size:inherit;color:inherit}
 .wkrow.loss{background:color-mix(in srgb,var(--bad) 15%,var(--ground))}
 .wkrow.loss::before{background:var(--bad)}
 .wkrank{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:26px;color:var(--muted);text-align:center}
-.wkname{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:clamp(26px,2vw,36px);line-height:1;text-transform:uppercase}
+.wkname{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:clamp(24px,1.75vw,32px);line-height:1;text-transform:uppercase}
 .wkteams{font-size:11.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden}
 .wkrec{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:clamp(26px,2.1vw,38px);text-align:right;line-height:1}
 .wkrec small{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;font-family:'Archivo',sans-serif}
@@ -425,6 +453,19 @@ input{font-family:inherit;font-size:inherit;color:inherit}
 .sheet-body{padding:14px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:8px 16px;border-radius:20px;font-size:12.5px;font-weight:600;z-index:80;box-shadow:var(--shadow)}
 .hide{display:none !important}
+
+/* The draft board is a fixed screen-share surface and must never scroll.
+   Season and Leaderboard are pages you read, so they get to be as tall as
+   their content — which is what lets the whole slate show at once. */
+body.page-scroll{overflow:auto}
+body.page-scroll .app{height:auto;min-height:100vh}
+body.page-scroll .seasonwrap{min-height:0}
+body.page-scroll .nowlist,
+body.page-scroll .nowband.solo .nowlist{max-height:none;overflow:visible}
+body.page-scroll .wkrows,body.page-scroll .ladder{overflow:visible}
+body.page-scroll .wkrow,body.page-scroll .lrow{flex:0 0 auto}
+body.page-scroll .seasonmain{align-items:start}
+body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 
 @media (prefers-reduced-motion:reduce){
   .cell.next::after,.tile.claiming,.tile.claiming .stamp,.pick.fresh,.anncard,.nameroll,
@@ -1064,14 +1105,14 @@ function nowBand(rost){
   const live = gameRows(rost, games, "in");
   const pre  = gameRows(rost, games, "pre").sort((a,b)=> new Date(a.g.date) - new Date(b.g.date));
 
-  // "up next" is the next kickoff, not the rest of the week
-  let nextRows = [], nextAt = null, laterCount = 0;
-  if(pre.length){
-    nextAt = pre[0].g.date;
-    nextRows = pre.filter(r=>r.g.date === nextAt);
-    laterCount = pre.length - nextRows.length;
-  }
-  if(!live.length && !nextRows.length) return "";
+  // everything still to be played, bucketed by kickoff
+  const slots = [];
+  pre.forEach(r=>{
+    const last = slots[slots.length-1];
+    if(last && last.at === r.g.date) last.rows.push(r);
+    else slots.push({at:r.g.date, rows:[r]});
+  });
+  if(!live.length && !slots.length) return "";
 
   const side = (sd, other, right, liveGame) => {
     const t = teamById(sd.t.id);
@@ -1102,21 +1143,24 @@ function nowBand(rost){
        </div>
      </div>`;
 
-  const nextBox = !nextRows.length ? "" :
-    `<div class="nowbox">
+  const nextBox = !slots.length ? "" :
+    `<div class="nowbox next">
        <div class="nowhead">
-         <h3>Up next</h3>
-         <div class="nowwhen">${esc(clockTime(nextAt))} · ${esc(relTime(nextAt))}${laterCount?` · ${laterCount} more after`:""}</div>
+         <h3>Still to play</h3>
+         <div class="nowwhen">${pre.length} game${pre.length===1?"":"s"} · first at ${esc(clockTime(slots[0].at))}, ${esc(relTime(slots[0].at))}</div>
        </div>
        <div class="nowlist">
-         ${nextRows.map(r=>`
-           <div class="nowrow">
-             ${side(r.away, r.home, false, false)}
-             <div class="nowmid">
-               <div class="nowkick">${r.g.tv?esc(r.g.tv):"at"}</div>
-             </div>
-             ${side(r.home, r.away, true, false)}
-           </div>`).join("")}
+         ${slots.map((sl,gi)=>`
+           <div class="nowgroup${gi===0?" first":""}"><b>${esc(clockTime(sl.at))}</b><span>${esc(relTime(sl.at))}</span></div>
+           ${sl.rows.map(r=>`
+             <div class="nowrow">
+               ${side(r.away, r.home, false, false)}
+               <div class="nowmid">
+                 <div class="nowkick">${r.g.tv?esc(r.g.tv):"at"}</div>
+               </div>
+               ${side(r.home, r.away, true, false)}
+             </div>`).join("")}
+         `).join("")}
        </div>
      </div>`;
 
@@ -1864,6 +1908,7 @@ function render(){
   document.getElementById("draftStage").classList.toggle("hide",!(draftTab && !setup));
   document.getElementById("seasonView").classList.toggle("hide",tab!=="season");
   document.getElementById("leaderView").classList.toggle("hide",tab!=="leader");
+  document.body.classList.toggle("page-scroll", tab!=="draft");
   renderTabs();
   renderTopActions();
   if(draftTab){
