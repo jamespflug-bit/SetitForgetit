@@ -397,7 +397,14 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
   flex:1 1 100%;font-size:12px;line-height:1.35;color:var(--muted);
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
 }
-.liveage{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em}
+.liveage{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;
+  background:transparent;border:1px solid var(--rule);border-radius:20px;padding:3px 10px;
+  -webkit-tap-highlight-color:transparent;
+}
+.liveage:hover{border-color:var(--rule-strong);color:var(--ink)}
+.liveage:active{background:var(--surface-2)}
+@media (max-width:1100px){ .liveage{font-size:12px;padding:5px 12px} }
 .nowtv{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 .nowempty{padding:14px;color:var(--muted);font-size:13.5px}
 
@@ -896,7 +903,7 @@ async function fetchWeek(w){
   const key = `sifi-espn-${SEASON.season}-w${w}`;
   const hit = cacheGet(key);
   if(hit && hit.complete) return hit;                 // finished weeks never change
-  const res = await fetch(`${ESPN_BASE}?dates=${SEASON.season}&seasontype=2&week=${w}`, {cache:"no-store"});
+  const res = await fetch(`${ESPN_BASE}?dates=${SEASON.season}&seasontype=2&week=${w}&_=${Date.now()}`, {cache:"no-store"});
   if(!res.ok) throw new Error("HTTP "+res.status);
   const j = await res.json();
   const results={}; let done=0, inProgress=0, scheduled=0, last=null;
@@ -1056,7 +1063,7 @@ function autoRecap(w){
 async function loadSideFiles(){
   const grab = async (file)=>{
     try{
-      const r = await fetch(file, {cache:"no-store"});
+      const r = await fetch(file + "?_=" + Date.now(), {cache:"no-store"});
       HOSTED = true;                                   // the request itself was allowed
       if(!r.ok) return null;
       return await r.json();
@@ -1078,6 +1085,8 @@ async function bootLive(){
   }catch(e){
     LIVE.error = String(e && e.message || e);         // sandboxed: embedded data stands
   }
+  lastFetchAt = Date.now();
+  wireWakeUps();
   if(changed){
     ui.week=null;
     /* Land on the results once they exist — unless someone is mid-draft or
@@ -1162,7 +1171,7 @@ function nowBand(rost){
          <h3><span class="onair"></span>On now</h3>
          <div class="nowwhen">${live.length} game${live.length===1?"":"s"} in progress</div>
          <div class="spacer"></div>
-         <div class="liveage" id="liveAge">updating…</div>
+         ${refreshChip()}
        </div>
        <div class="nowlist">
          ${live.map(r=>{
@@ -1192,6 +1201,8 @@ function nowBand(rost){
        <div class="nowhead">
          <h3>Still to play</h3>
          <div class="nowwhen">${pre.length} game${pre.length===1?"":"s"} · first at ${esc(clockTime(slots[0].at))}, ${esc(relTime(slots[0].at))}</div>
+         <div class="spacer"></div>
+         ${live.length ? "" : refreshChip()}
        </div>
        <div class="nowlist">
          ${slots.map((sl,gi)=>`
@@ -1211,6 +1222,36 @@ function nowBand(rost){
   return `<div class="nowband${(liveBox&&nextBox)?"":" solo"}">${liveBox}${nextBox}</div>`;
 }
 
+/* Saved to a phone home screen, iOS suspends the page and its timers the moment
+   you switch away, and does not restart them on return — so a timer alone means
+   the app looks frozen until it is force-quit. These events are what actually
+   fire on resume; each one pulls fresh data immediately. */
+let lastFetchAt = 0, refreshing = false;
+async function refreshNow(force){
+  if(refreshing) return;
+  if(!force && Date.now() - lastFetchAt < 5000) return;    // don't thrash on rapid app switching
+  refreshing = true; lastFetchAt = Date.now();
+  paintAge("refreshing…");
+  try{
+    await loadSideFiles();
+    await loadLiveSeason();
+    if(ui.tab==="season") renderSeason();
+    else if(ui.tab==="leader") renderLeader();
+  }catch(e){}
+  refreshing = false;
+  tickLiveAge();
+  scheduleLiveRefresh();
+}
+let wakeWired = false;
+function wireWakeUps(){
+  if(wakeWired) return;
+  wakeWired = true;
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) refreshNow(); });
+  addEventListener("pageshow", ()=>refreshNow());   // restored from the page cache
+  addEventListener("focus", ()=>refreshNow());
+  addEventListener("online", ()=>refreshNow(true));
+}
+
 /* Poll while something is live, or as a kickoff approaches. Nothing running
    means no polling at all. */
 let nowTimer = null;
@@ -1224,25 +1265,27 @@ function scheduleLiveRefresh(){
     return g.state==="pre" && d - Date.now() < 30*60000;
   });
   if(!anyLive && !soon) return;
-  nowTimer = setTimeout(async ()=>{
-    try{
-      if(await loadLiveSeason()){
-        if(ui.tab==="season") renderSeason();
-        else if(ui.tab==="leader") renderLeader();
-      }
-    }catch(e){}
-    scheduleLiveRefresh();
-  }, anyLive ? 30000 : 60000);
+  nowTimer = setTimeout(()=>refreshNow(true), anyLive ? 30000 : 60000);
 }
 
 /* Shows the age of the data so it is obvious the page is refreshing itself.
    Called on render as well as on the tick, so it never flashes a placeholder. */
-function tickLiveAge(){
-  const el = document.getElementById("liveAge");
-  if(!el || !LIVE.at) return;
-  const s = Math.max(0, Math.round((Date.now() - LIVE.at.getTime())/1000));
-  el.textContent = s < 5 ? "just updated" : s < 90 ? `updated ${s}s ago` : `updated ${Math.round(s/60)}m ago`;
+function paintAge(text){
+  document.querySelectorAll(".liveage").forEach(el=>{ el.textContent = text; });
 }
+function tickLiveAge(){
+  if(refreshing) return paintAge("refreshing…");
+  if(!LIVE.at) return;
+  const s = Math.max(0, Math.round((Date.now() - LIVE.at.getTime())/1000));
+  paintAge(s < 5 ? "just updated" : s < 90 ? `updated ${s}s ago` : `updated ${Math.round(s/60)}m ago`);
+}
+/* No reload button exists in a home-screen app, so the label is the button. */
+function refreshChip(){
+  return LIVE.on ? `<button class="liveage" type="button" title="Tap to refresh now">updating…</button>` : "";
+}
+document.addEventListener("click", e=>{
+  if(e.target.closest(".liveage")) refreshNow(true);
+});
 setInterval(tickLiveAge, 1000);
 
 /* ================= SEASON VIEW ================= */
