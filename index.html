@@ -317,7 +317,7 @@ input{font-family:inherit;font-size:inherit;color:inherit}
 .wchip[aria-pressed="true"]{background:var(--flag-ink);color:var(--flag);border-color:var(--flag-ink)}
 .wchip[disabled]{opacity:.32;cursor:not-allowed}
 
-.nowband{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.nowband{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:start}
 .nowband.solo{grid-template-columns:minmax(0,1fr)}
 .nowbox{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;overflow:hidden}
 .nowhead{display:flex;align-items:baseline;gap:10px;padding:7px 14px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
@@ -337,6 +337,7 @@ body.page-scroll .nowband.solo .nowlist{max-height:none;overflow:visible}
 body.page-scroll .wkrows,body.page-scroll .ladder{overflow:visible}
 body.page-scroll .wkrow,body.page-scroll .lrow{flex:0 0 auto}
 body.page-scroll .seasonmain{align-items:start}
+body.page-scroll .locked-note{flex:0 0 auto;padding:34px 20px}
 body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 
 @media (prefers-reduced-motion:reduce){.onair{animation:none}}
@@ -378,6 +379,25 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 .nowscore{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:21px;line-height:1}
 .nowclock{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 .nowkick{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;line-height:1}
+.ball{
+  display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--flag);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--flag) 35%,transparent);flex:0 0 auto;
+}
+.nowsit{
+  grid-column:1/-1;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  margin-top:5px;padding-top:5px;border-top:1px solid var(--rule);
+}
+.nowdd{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--ink)}
+.nowspot{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rz{
+  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  background:#C6371B;color:#fff;border-radius:9px;padding:1px 7px;
+}
+.nowplay{
+  flex:1 1 100%;font-size:12px;line-height:1.35;color:var(--muted);
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+.liveage{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em}
 .nowtv{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 .nowempty{padding:14px;color:var(--muted);font-size:13.5px}
 
@@ -465,6 +485,7 @@ body.page-scroll .nowband.solo .nowlist{max-height:none;overflow:visible}
 body.page-scroll .wkrows,body.page-scroll .ladder{overflow:visible}
 body.page-scroll .wkrow,body.page-scroll .lrow{flex:0 0 auto}
 body.page-scroll .seasonmain{align-items:start}
+body.page-scroll .locked-note{flex:0 0 auto;padding:34px 20px}
 body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 
 @media (prefers-reduced-motion:reduce){
@@ -920,6 +941,7 @@ function parseGame(ev, c, st, cs){
   const home = cs.find(x=>x.homeAway==="home") || cs[0];
   const away = cs.find(x=>x.homeAway==="away") || cs[1];
   const side = x => ({
+    espnId: String(x.id || ""),
     id: fromEspn(x.team && x.team.abbreviation),
     name: (x.team && x.team.shortDisplayName) || (x.team && x.team.name) || "",
     score: Number(x.score),
@@ -934,11 +956,20 @@ function parseGame(ev, c, st, cs){
     else if(stat.period) clock = "Q" + stat.period + (stat.displayClock ? " · " + stat.displayClock : "");
     else clock = "In progress";
   }
+  /* situation only exists while a game is live. Verified against a real
+     in-progress game: {possession (a competitor id), shortDownDistanceText,
+     possessionText, isRedZone, lastPlay:{text,type}}. */
+  const sit = c.situation || null;
   return {
     id: ev.id, date: ev.date, state,
     clock, detail: st.shortDetail || st.detail || "",
     home: side(home), away: side(away),
-    tv: ((c.broadcasts||[]).find(b=>b.market==="national") || (c.broadcasts||[])[0] || {names:[]}).names[0] || ""
+    tv: ((c.broadcasts||[]).find(b=>b.market==="national") || (c.broadcasts||[])[0] || {names:[]}).names[0] || "",
+    ball: sit && sit.possession ? String(sit.possession) : "",
+    downDist: sit ? (sit.shortDownDistanceText || "") : "",
+    spot: sit ? (sit.possessionText || "") : "",
+    redZone: !!(sit && sit.isRedZone),
+    lastPlay: sit && sit.lastPlay && sit.lastPlay.text ? String(sit.lastPlay.text).trim() : ""
   };
 }
 
@@ -1051,8 +1082,9 @@ async function bootLive(){
     ui.week=null;
     /* Land on the results once they exist — unless someone is mid-draft or
        has already chosen a tab for themselves. */
-    if(draftLocked()) ui.tab = SEASON.weeks.length ? "season" : "leader";
-    else if(!ui.tabTouched && SEASON.weeks.length && S.phase!=="draft") ui.tab="season";
+    const anyLive = (LIVE.games||[]).some(g=>g.state==="in");
+    if(draftLocked()) ui.tab = (SEASON.weeks.length || anyLive) ? "season" : "leader";
+    else if(!ui.tabTouched && (SEASON.weeks.length || anyLive) && S.phase!=="draft") ui.tab="season";
     render();
   }
 }
@@ -1114,12 +1146,13 @@ function nowBand(rost){
   });
   if(!live.length && !slots.length) return "";
 
-  const side = (sd, other, right, liveGame) => {
+  const side = (sd, other, right, liveGame, g) => {
     const t = teamById(sd.t.id);
     const lead = liveGame && Number.isFinite(sd.t.score) && Number.isFinite(other.t.score) && sd.t.score > other.t.score;
+    const hasBall = liveGame && g && g.ball && g.ball === sd.t.espnId;
     return `<div class="nowside${right?" r":""}${lead?" lead":""}${sd.who?"":" none"}">
       <div class="nowwho">${esc(sd.who || "unowned")}</div>
-      <div class="nowteam">${t?`<i style="background:${t.c1}"></i>`:""}<span>${esc(sd.t.name)}</span></div>
+      <div class="nowteam">${t?`<i style="background:${t.c1}"></i>`:""}<span>${esc(sd.t.name)}</span>${hasBall?`<span class="ball" title="has the ball"></span>`:""}</div>
     </div>`;
   };
 
@@ -1128,18 +1161,29 @@ function nowBand(rost){
        <div class="nowhead">
          <h3><span class="onair"></span>On now</h3>
          <div class="nowwhen">${live.length} game${live.length===1?"":"s"} in progress</div>
+         <div class="spacer"></div>
+         <div class="liveage" id="liveAge">updating…</div>
        </div>
        <div class="nowlist">
-         ${live.map(r=>`
+         ${live.map(r=>{
+           const sit = (r.g.downDist || r.g.spot || r.g.lastPlay || r.g.redZone) ? `
+             <div class="nowsit">
+               ${r.g.downDist?`<span class="nowdd">${esc(r.g.downDist)}</span>`:""}
+               ${r.g.spot?`<span class="nowspot">at ${esc(r.g.spot)}</span>`:""}
+               ${r.g.redZone?`<span class="rz">red zone</span>`:""}
+               ${r.g.lastPlay?`<span class="nowplay">${esc(r.g.lastPlay)}</span>`:""}
+             </div>` : "";
+           return `
            <div class="nowrow">
-             ${side(r.away, r.home, false, true)}
+             ${side(r.away, r.home, false, true, r.g)}
              <div class="nowmid">
                ${Number.isFinite(r.away.t.score)&&Number.isFinite(r.home.t.score)
                   ? `<div class="nowscore">${r.away.t.score} – ${r.home.t.score}</div>` : `<div class="nowscore">vs</div>`}
                ${r.g.clock ? `<div class="nowclock">${esc(r.g.clock)}</div>` : ""}
              </div>
-             ${side(r.home, r.away, true, true)}
-           </div>`).join("")}
+             ${side(r.home, r.away, true, true, r.g)}
+             ${sit}
+           </div>`;}).join("")}
        </div>
      </div>`;
 
@@ -1154,11 +1198,11 @@ function nowBand(rost){
            <div class="nowgroup${gi===0?" first":""}"><b>${esc(clockTime(sl.at))}</b><span>${esc(relTime(sl.at))}</span></div>
            ${sl.rows.map(r=>`
              <div class="nowrow">
-               ${side(r.away, r.home, false, false)}
+               ${side(r.away, r.home, false, false, r.g)}
                <div class="nowmid">
                  <div class="nowkick">${r.g.tv?esc(r.g.tv):"at"}</div>
                </div>
-               ${side(r.home, r.away, true, false)}
+               ${side(r.home, r.away, true, false, r.g)}
              </div>`).join("")}
          `).join("")}
        </div>
@@ -1188,21 +1232,38 @@ function scheduleLiveRefresh(){
       }
     }catch(e){}
     scheduleLiveRefresh();
-  }, 60000);
+  }, anyLive ? 30000 : 60000);
 }
+
+/* Shows the age of the data so it is obvious the page is refreshing itself.
+   Called on render as well as on the tick, so it never flashes a placeholder. */
+function tickLiveAge(){
+  const el = document.getElementById("liveAge");
+  if(!el || !LIVE.at) return;
+  const s = Math.max(0, Math.round((Date.now() - LIVE.at.getTime())/1000));
+  el.textContent = s < 5 ? "just updated" : s < 90 ? `updated ${s}s ago` : `updated ${Math.round(s/60)}m ago`;
+}
+setInterval(tickLiveAge, 1000);
 
 /* ================= SEASON VIEW ================= */
 function renderSeason(){
   const host=document.getElementById("seasonBody");
   const rost=liveRosters();
   if(!rost || !SEASON.weeks.length){
+    const anyLive = (LIVE.games||[]).some(g=>g.state==="in");
+    const kicked  = (LIVE.games||[]).length && new Date(SEASON.seasonStart+"T00:00:00-04:00") <= new Date();
     host.innerHTML = (rost ? nowBand(rost) : "") + lockedPanel(
-      rost ? "No games yet" : "Nothing to track yet",
-      rost
-        ? `Rosters are locked in. The season opens ${fmtDate(SEASON.seasonStart)} and results land here on their own as games finish — nobody has to type anything in. The Leaderboard tab has everyone's four teams in the meantime.`
-        : "The season view switches on once all 32 picks are in. Finish the draft on the Draft tab and this fills itself in from there."
+      !rost ? "Nothing to track yet" : anyLive ? "Week 1 is under way" : "No results yet",
+      !rost
+        ? "The season view switches on once all 32 picks are in. Finish the draft on the Draft tab and this fills itself in from there."
+        : anyLive
+          ? "Records fill in above as games go final — nobody has to type anything in. The Leaderboard tab has everyone's four teams."
+          : kicked
+            ? "Nothing has gone final yet. Records fill in here as games finish, on their own."
+            : `Rosters are locked in. The season opens ${fmtDate(SEASON.seasonStart)}, and results land here on their own as games finish. The Leaderboard tab has everyone's four teams in the meantime.`
     );
     scheduleLiveRefresh();
+    tickLiveAge();
     return;
   }
   if(ui.week==null || !weekByNumber(ui.week)) ui.week = latestWeek();
@@ -1253,6 +1314,7 @@ function renderSeason(){
   });
   scheduleFit();
   scheduleLiveRefresh();
+  tickLiveAge();
 }
 
 function teamMark(id, wk){
@@ -1314,6 +1376,7 @@ function renderLeader(){
        </div>
        <div class="recap-body">${esc(blurb)}</div>
      </div>
+     ${nowBand(rost)}
      <section class="panel" style="flex:1 1 auto;min-height:0">
        <div class="phead"><h2>${played?"Leaderboard":"The Rosters"}</h2><span class="note">${played?played+" of "+SEASON.totalWeeks+" weeks played":"in draft order · nobody leads yet"}</span><div class="spacer"></div>${liveBadge()}</div>
        <div class="ladder${final?"":" no-money"}">
@@ -1333,6 +1396,8 @@ function renderLeader(){
        </div>
      </section>`;
   scheduleFit();
+  scheduleLiveRefresh();
+  tickLiveAge();
 }
 
 function lockedPanel(title, body){
@@ -1899,7 +1964,9 @@ document.getElementById("tabs").addEventListener("click", e=>{
 });
 
 function render(){
-  if(draftLocked() && ui.tab==="draft") ui.tab = SEASON.weeks.length ? "season" : "leader";
+  if(draftLocked() && ui.tab==="draft"){
+    ui.tab = (SEASON.weeks.length || (LIVE.games||[]).some(g=>g.state==="in")) ? "season" : "leader";
+  }
   const tab=ui.tab;
   const draftTab = tab==="draft";
   const setup = draftTab && S.phase==="setup";
