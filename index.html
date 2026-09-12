@@ -456,6 +456,15 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 .lrow.p2{border-color:var(--rule-strong)}
 .lrow.plast{background:color-mix(in srgb,var(--bad) 16%,var(--ground));border-color:color-mix(in srgb,var(--bad) 40%,var(--rule))}
 .lrank{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:46px;line-height:.85;text-align:center;color:var(--muted)}
+/* "T" before the place is the tie marker, identical on both tabs */
+.tieflag{font-size:.5em;vertical-align:.55em;opacity:.75;letter-spacing:.02em;margin-right:.06em}
+.wktable th.rk,.wktable td.rk{
+  text-align:center;width:1%;white-space:nowrap;
+  font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:17px;color:var(--muted);
+  position:sticky;left:0;background:var(--surface);z-index:1;
+}
+.wktable th.rk{font-family:'Archivo',sans-serif;font-size:11px}
+.wktable td.who,.wktable th.who{left:34px}
 .lrow.p1 .lrank{color:var(--ink)}
 .lname{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:clamp(30px,2.4vw,44px);line-height:.95;text-transform:uppercase}
 .lteams{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
@@ -864,6 +873,33 @@ function teamRecord(id){
 function standings(rost, upto){
   return rost.order.map(nm=>({nm, r:totalRecord(nm,rost,upto)}))
                    .sort((a,b)=> b.r.w-a.r.w || a.r.l-b.r.l || a.nm.localeCompare(b.nm));
+}
+
+/* Competition ranking, shared by both tabs so a tie looks identical on each:
+   equal records share a place and the following place is skipped (1, 2, 2, 4).
+   A tie means the same wins AND the same losses — byes mean games played
+   can differ, so matching on wins alone would call 7-3 and 7-4 equal. */
+function rankList(sorted){
+  const key = x => `${x.r.w}-${x.r.l}-${x.r.t||0}`;
+  let place = 0, prev = null;
+  const out = sorted.map((x,i)=>{
+    const k = key(x);
+    if(k !== prev){ place = i+1; prev = k; }
+    return Object.assign({}, x, {place, key:k});
+  });
+  const counts = {};
+  out.forEach(x=>{ counts[x.key] = (counts[x.key]||0)+1; });
+  out.forEach(x=>{ x.tied = counts[x.key] > 1; });
+  return out;
+}
+/* One rank glyph, used verbatim in both tabs. */
+function rankMark(x){
+  return x.tied ? `<span class="tieflag">T</span>${x.place}` : String(x.place);
+}
+function nameList(a){
+  if(a.length === 1) return a[0].nm;
+  if(a.length === 2) return `${a[0].nm} and ${a[1].nm}`;
+  return a.slice(0,-1).map(x=>x.nm).join(", ") + " and " + a[a.length-1].nm;
 }
 const latestWeek = () => SEASON.weeks.length ? SEASON.weeks[SEASON.weeks.length-1].n : 0;
 function weekByNumber(x){ return SEASON.weeks.find(w=>w.n===x) || null; }
@@ -1355,8 +1391,9 @@ function renderSeason(){
   }
   if(ui.week==null || !weekByNumber(ui.week)) ui.week = latestWeek();
   const wk = weekByNumber(ui.week);
-  const rows = rost.order.map(nm=>({nm, wr:weekRecord(nm,wk,rost), tr:totalRecord(nm,rost,wk.n)}))
-                         .sort((a,b)=> b.wr.w-a.wr.w || a.wr.l-b.wr.l);
+  const rows = rankList(
+    rost.order.map(nm=>({nm, r:weekRecord(nm,wk,rost), tr:totalRecord(nm,rost,wk.n)}))
+              .sort((a,b)=> b.r.w-a.r.w || a.r.l-b.r.l || a.nm.localeCompare(b.nm)));
 
   let chips = "";
   for(let i=1;i<=SEASON.totalWeeks;i++){
@@ -1379,13 +1416,13 @@ function renderSeason(){
          <div class="phead"><h2>Week ${wk.n}</h2><span class="note">best to worst</span><div class="spacer"></div>${liveBadge()}</div>
          <div class="wkrows">
            ${rows.map((r,i)=>`
-             <div class="wkrow ${r.wr.w>r.wr.l?"win":r.wr.w<r.wr.l?"loss":""}">
-               <div class="wkrank">${i+1}</div>
+             <div class="wkrow ${r.r.w>r.r.l?"win":r.r.w<r.r.l?"loss":""}">
+               <div class="wkrank">${rankMark(r)}</div>
                <div>
                  <div class="wkname">${esc(r.nm)}</div>
                  <div class="wkteams">${(rost.rosters[r.nm]||[]).map(id=>teamMark(id,wk)).join(" · ")}</div>
                </div>
-               <div class="wkrec">${r.wr.str}<small>${r.tr.str} overall</small></div>
+               <div class="wkrec">${r.r.str}<small>${r.tr.str} overall</small></div>
              </div>`).join("")}
          </div>
        </section>
@@ -1416,11 +1453,11 @@ function teamMark(id, wk){
 }
 function seasonTable(rost){
   const weeks = SEASON.weeks.map(w=>w.n);
-  let h = `<table class="wktable"><thead><tr><th class="who">Owner</th>`;
+  let h = `<table class="wktable"><thead><tr><th class="rk">#</th><th class="who">Owner</th>`;
   weeks.forEach(w=>{ h+=`<th>W${w}</th>`; });
   h += `<th>Total</th></tr></thead><tbody>`;
-  standings(rost).forEach(s=>{
-    h += `<tr><td class="who">${esc(s.nm)}</td>`;
+  rankList(standings(rost)).forEach(s=>{
+    h += `<tr><td class="rk">${rankMark(s)}</td><td class="who">${esc(s.nm)}</td>`;
     weeks.forEach(w=>{
       const wk=weekByNumber(w), r=weekRecord(s.nm,wk,rost);
       const cls = !r.played ? "none" : r.w>r.l ? "w" : r.w<r.l ? "l" : "";
@@ -1443,8 +1480,8 @@ function renderLeader(){
   const played = SEASON.weeks.length;
   /* Nobody leads before kickoff — with everyone at 0-0 a "ranking" is just
      alphabetical order wearing a gold border. Show draft order instead. */
-  const table = played ? standings(rost)
-                       : rost.order.map(nm=>({nm, r:totalRecord(nm,rost)}));
+  const table = played ? rankList(standings(rost))
+                       : rost.order.map((nm,i)=>({nm, r:totalRecord(nm,rost), place:i+1, tied:false}));
   const lastIdx = table.length-1;
   /* Money stays off the board until the season is actually over. */
   const final = played >= SEASON.totalWeeks;
@@ -1453,8 +1490,24 @@ function renderLeader(){
   /* Brief and factual: what is still to play and who it is still to play for.
      Anything more detailed belongs on the Season tab. */
   const remaining = remainingLine(rost);
+  const leaders  = played ? table.filter(x=>x.place===1) : [];
+  const worstKey = played ? table[table.length-1].key : null;
+  const atLast   = played ? table.filter(x=>x.key===worstKey) : [];
+  const seconds  = played ? table.filter(x=>x.place===2) : [];
   let blurb;
-  if(final) blurb = `Final. ${table[0].nm} takes ${MONEY[1]}, ${table[1].nm} takes ${MONEY[2]}, and ${table[lastIdx].nm} gets ${MONEY_LAST} back for finishing last at ${table[lastIdx].r.str}.`;
+  if(final){
+    const bits = [];
+    bits.push(leaders.length>1
+      ? `${nameList(leaders)} tied for first at ${leaders[0].r.str} — split the ${MONEY[1]}.`
+      : `${leaders[0].nm} takes ${MONEY[1]} at ${leaders[0].r.str}.`);
+    if(seconds.length) bits.push(seconds.length>1
+      ? `${nameList(seconds)} tied for second — split the ${MONEY[2]}.`
+      : `${seconds[0].nm} takes ${MONEY[2]}.`);
+    bits.push(atLast.length>1
+      ? `${nameList(atLast)} tied for last at ${atLast[0].r.str} — split the ${MONEY_LAST}.`
+      : `${atLast[0].nm} gets ${MONEY_LAST} back for finishing last at ${atLast[0].r.str}.`);
+    blurb = "Final. " + bits.join(" ");
+  }
   else if(remaining) blurb = remaining;
   else if(!played) blurb = "No games played yet. Everyone is undefeated and everyone is a genius.";
   else blurb = `${left===1?"1 week":left+" weeks"} left in the season.`;
@@ -1463,7 +1516,10 @@ function renderLeader(){
     `<div class="recapcard">
        <div class="recap-head">
          <div class="recap-week">${played?(final?"Final standings":`Through week ${latestWeek()}`):"Rosters set"}</div>
-         <div class="recap-when">${played?`${table[0].nm} leads at ${table[0].r.str}`:"Season opens "+fmtDate(SEASON.seasonStart)}</div>
+         <div class="recap-when">${played
+            ? (leaders.length>1 ? `${esc(nameList(leaders))} tied at ${table[0].r.str}`
+                                : `${table[0].nm} leads at ${table[0].r.str}`)
+            : "Season opens "+fmtDate(SEASON.seasonStart)}</div>
        </div>
        <div class="recap-body">${esc(blurb)}</div>
      </div>
@@ -1472,7 +1528,7 @@ function renderLeader(){
        <div class="ladder${final?"":" no-money"}">
          ${table.map((s,i)=>`
            <div class="lrow ${played&&i===0?"p1":played&&i===1?"p2":""} ${i===lastIdx&&played?"plast":""}">
-             <div class="lrank">${i+1}</div>
+             <div class="lrank">${played?rankMark(s):i+1}</div>
              <div>
                <div class="lname">${esc(s.nm)}</div>
                <div class="lteams">${(rost.rosters[s.nm]||[]).map(id=>{
@@ -1481,7 +1537,7 @@ function renderLeader(){
                }).join("")}</div>
              </div>
              <div class="lrec">${played?s.r.str:"—"}<small>${played?(s.r.pct*100).toFixed(0)+"%":"pick "+(i+1)}</small></div>
-             ${final?`<div class="lmoney">${i===0?MONEY[1]:i===1?MONEY[2]:i===lastIdx?MONEY_LAST:"—"}</div>`:""}
+             ${final?`<div class="lmoney">${s.place===1?MONEY[1]:s.place===2?MONEY[2]:s.key===worstKey?MONEY_LAST:"—"}</div>`:""}
            </div>`).join("")}
        </div>
      </section>`;
