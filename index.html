@@ -883,7 +883,7 @@ function weekByNumber(x){ return SEASON.weeks.find(w=>w.n===x) || null; }
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
 const FROM_ESPN = {WSH:"WAS"};
 const fromEspn = a => FROM_ESPN[a] || a;
-let LIVE = {on:false, at:null, inProgress:0, scheduled:0, error:null, games:[], week:0};
+let LIVE = {on:false, at:null, inProgress:0, scheduled:0, error:null, games:[], week:0, wk:null};
 /* True only where the page can read its own sibling files — i.e. hosted on
    GitHub Pages. Inside the artifact sandbox every request is refused, and a
    browser-initiated download would be refused too, so the download button
@@ -1031,8 +1031,13 @@ async function loadLiveSeason(){
     }catch(e){}
   }
 
+  const srcWeek = (gweek === upto ? tail : null);
+  const wkTally = srcWeek
+    ? {done:srcWeek.done, inProgress:srcWeek.inProgress, scheduled:srcWeek.scheduled}
+    : {done:0, inProgress:0, scheduled:games.length};      // reached forward into next week
   if(!weeks.length){
-    LIVE = Object.assign(LIVE, {on:true, at:new Date(), inProgress, scheduled, error:null, games, week:gweek});
+    LIVE = Object.assign(LIVE, {on:true, at:new Date(), inProgress, scheduled, error:null,
+                                games, week:gweek, wk:wkTally});
     return false;
   }
 
@@ -1041,7 +1046,7 @@ async function loadLiveSeason(){
     n:w.n, through:w.through, results:w.results,
     recap: recaps[String(w.n)] || (SEASON.weeks.find(x=>x.n===w.n)||{}).recap || autoRecap(w)
   }));
-  LIVE = {on:true, at:new Date(), inProgress, scheduled, error:null, games, week:gweek};
+  LIVE = {on:true, at:new Date(), inProgress, scheduled, error:null, games, week:gweek, wk:wkTally};
   return true;
 }
 
@@ -1137,6 +1142,45 @@ function gameRows(rost, games, state){
     away: {t:g.away, who: ownerOf(rost, g.away.id)},
     home: {t:g.home, who: ownerOf(rost, g.home.id)}
   })).filter(r=>r.away.who || r.home.who);
+}
+
+/* Owners with teams that have not finished yet, most outstanding first. */
+function pendingByOwner(rost){
+  const pend = {};
+  (LIVE.games||[]).forEach(g=>{
+    [g.home, g.away].forEach(t=>{
+      const who = ownerOf(rost, t.id);
+      if(who) pend[who] = (pend[who]||0) + 1;
+    });
+  });
+  return rost.order.map(nm=>({nm, n:pend[nm]||0}))
+                   .filter(x=>x.n>0)
+                   .sort((a,b)=> b.n-a.n || a.nm.localeCompare(b.nm));
+}
+
+/* One short line for the Leaderboard: what is left and who it is left for.
+   The Season tab carries the actual schedule — this must not repeat it. */
+function remainingLine(rost){
+  const games = LIVE.games || [];
+  const wk = LIVE.wk || {done:0, inProgress:0, scheduled:0};
+  const left = games.length;
+  if(!left) return LIVE.week ? `Week ${LIVE.week} is complete — every roster has played.` : "";
+
+  const total = wk.done + wk.inProgress + wk.scheduled;
+  const pend = pendingByOwner(rost);
+
+  const head = wk.done
+    ? `Week ${LIVE.week}: ${left} of ${total} games still to play`
+    : `Week ${LIVE.week}: ${left} game${left===1?"":"s"} to play`;
+  const live = wk.inProgress ? ` (${wk.inProgress} in progress)` : "";
+  let who;
+  if(!wk.done) who = ". Nobody has played yet — all four teams out for everyone.";
+  else {
+    const shown = pend.slice(0,4).map(x=>`${x.nm} (${x.n})`).join(", ");
+    const more = pend.length > 4 ? ` +${pend.length-4} more` : "";
+    who = `. Waiting on ${shown}${more}.`;
+  }
+  return head + live + who + " Season tab has the detail.";
 }
 
 function nowBand(rost){
@@ -1406,10 +1450,14 @@ function renderLeader(){
   const final = played >= SEASON.totalWeeks;
   const left = Math.max(0, SEASON.totalWeeks - played);
 
+  /* Brief and factual: what is still to play and who it is still to play for.
+     Anything more detailed belongs on the Season tab. */
+  const remaining = remainingLine(rost);
   let blurb;
-  if(!played) blurb = "No games played yet. Everyone is undefeated and everyone is a genius.";
-  else if(final) blurb = `Final. ${table[0].nm} takes ${MONEY[1]}, ${table[1].nm} takes ${MONEY[2]}, and ${table[lastIdx].nm} gets ${MONEY_LAST} back for finishing last at ${table[lastIdx].r.str}.`;
-  else blurb = `${table[0].nm} is on top at ${table[0].r.str}, ${table[lastIdx].nm} is holding up the bottom at ${table[lastIdx].r.str}, and there ${left===1?"is 1 week":"are "+left+" weeks"} left to do something about it.`;
+  if(final) blurb = `Final. ${table[0].nm} takes ${MONEY[1]}, ${table[1].nm} takes ${MONEY[2]}, and ${table[lastIdx].nm} gets ${MONEY_LAST} back for finishing last at ${table[lastIdx].r.str}.`;
+  else if(remaining) blurb = remaining;
+  else if(!played) blurb = "No games played yet. Everyone is undefeated and everyone is a genius.";
+  else blurb = `${left===1?"1 week":left+" weeks"} left in the season.`;
 
   host.innerHTML =
     `<div class="recapcard">
@@ -1419,9 +1467,8 @@ function renderLeader(){
        </div>
        <div class="recap-body">${esc(blurb)}</div>
      </div>
-     ${nowBand(rost)}
      <section class="panel" style="flex:1 1 auto;min-height:0">
-       <div class="phead"><h2>${played?"Leaderboard":"The Rosters"}</h2><span class="note">${played?played+" of "+SEASON.totalWeeks+" weeks played":"in draft order · nobody leads yet"}</span><div class="spacer"></div>${liveBadge()}</div>
+       <div class="phead"><h2>${played?"Leaderboard":"The Rosters"}</h2><span class="note">${played?played+" of "+SEASON.totalWeeks+" weeks played":"in draft order · nobody leads yet"}</span><div class="spacer"></div>${liveBadge()}${refreshChip()}</div>
        <div class="ladder${final?"":" no-money"}">
          ${table.map((s,i)=>`
            <div class="lrow ${played&&i===0?"p1":played&&i===1?"p2":""} ${i===lastIdx&&played?"plast":""}">
