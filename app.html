@@ -9,7 +9,7 @@
 <style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<script>window.__BUILD__ = "2026-09-12 17:06";</script>
+<script>window.__BUILD__ = "2026-09-19 00:00";</script>
 <style>
 :root{
   --ground:#ECEAE1; --surface:#F8F7F2; --surface-2:#E3E1D6;
@@ -412,6 +412,45 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 @media (max-width:1100px){ .liveage{font-size:12px;padding:5px 12px} }
 .nowtv{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 .nowempty{padding:14px;color:var(--muted);font-size:13.5px}
+
+/* ---------- matchup badges + expandable game detail ---------- */
+.mbadge{font-size:15px;line-height:1;text-align:center;margin-bottom:2px;cursor:default}
+.nowextra{grid-column:1/-1;margin-top:6px}
+.matchtoggle{
+  display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--rule);
+  border-radius:20px;padding:4px 11px;font-size:11.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;-webkit-tap-highlight-color:transparent;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.matchtoggle:hover{border-color:var(--rule-strong);color:var(--ink)}
+.matchtoggle .chev{font-size:10px;flex:0 0 auto}
+.matchpanel{margin-top:8px;padding:10px 12px;background:var(--ground);border:1px solid var(--rule);border-radius:4px;display:flex;flex-direction:column;gap:8px}
+.mjab{font-size:12.5px;line-height:1.4;color:var(--ink-soft)}
+.mjab b{color:var(--ink)}
+
+.fieldcard{display:flex;flex-direction:column;gap:8px;padding-top:6px;border-top:1px dashed var(--rule)}
+.fieldtop{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fieldmeta{display:flex;align-items:center;gap:14px;font-size:12.5px}
+.fieldmeta .flab{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.fieldmeta b{font-family:'IBM Plex Mono',monospace;font-size:15px}
+.fieldmeta .fdiv{width:1px;align-self:stretch;background:var(--rule)}
+.fieldstrip{display:flex;align-items:stretch;height:34px;border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--rule-strong)}
+.fend{flex:0 0 34px;display:flex;align-items:center;justify-content:center}
+.fend span{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:12px;color:#fff;letter-spacing:.04em;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.fmid{position:relative;flex:1 1 auto;background-color:var(--surface-2)}
+.ftick{position:absolute;top:0;bottom:0;width:0;border-left:1px solid var(--rule-strong);transform:translateX(-50%);opacity:.7}
+.ftick span{position:absolute;bottom:2px;left:3px;font-size:8px;font-family:'IBM Plex Mono',monospace;color:var(--muted)}
+.fmark{position:absolute;top:0;bottom:0;width:2px;transform:translateX(-50%)}
+.fmark.ffirst{background:#F2C023}
+.fmark.fball{width:9px;height:9px;border-radius:50%;background:var(--ink);top:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px var(--surface)}
+.fieldrz{align-self:flex-start;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;background:#C6371B;color:#fff;border-radius:9px;padding:1px 8px}
+.fieldplay{font-size:12px;line-height:1.35;color:var(--muted)}
+.fwprow{display:grid;grid-template-columns:34px 1fr 40px;align-items:center;gap:8px;font-size:11.5px;font-weight:700}
+.fwpteam{font-family:'IBM Plex Mono',monospace}
+.fwpbar{height:6px;border-radius:4px;background:var(--rule);overflow:hidden}
+.fwpbar i{display:block;height:100%;border-radius:4px}
+.fwppct{text-align:right;font-family:'IBM Plex Mono',monospace}
+.fwploading{font-size:11.5px;color:var(--muted)}
 
 .seasonmain{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:10px}
 .wkrows{flex:1 1 auto;min-height:0;overflow:auto;padding:6px 8px;display:flex;flex-direction:column;gap:5px}
@@ -1218,12 +1257,165 @@ function remainingLine(rost){
   return head + live + who + " Season tab has the detail.";
 }
 
+/* One badge per matchup, most interesting condition first. null means the
+   game is a normal week — still expandable, just no icon to flag it. */
+function matchupBadge(r, ranks){
+  const aOwn = r.away.who, hOwn = r.home.who;
+  if(aOwn && hOwn && aOwn === hOwn)
+    return {icon:"🪞", label:`Same-owner special — ${aOwn} can't lose this one`};
+
+  const ta = teamById(r.away.t.id), th = teamById(r.home.t.id);
+  const div = ta && th && ta.conf===th.conf && ta.div===th.div;
+
+  if(ranks){
+    const rankOf = nm => ranks.find(x=>x.nm===nm);
+    const last = ranks.reduce((m,x)=>Math.max(m,x.place),1);
+    const ra = aOwn ? rankOf(aOwn) : null, rh = hOwn ? rankOf(hOwn) : null;
+    if(ra && rh && ra.place===1 && rh.place===1)
+      return {icon:"🏆", label:"Leaderboard collision — both sit in first"};
+    if(ra && rh && ra.place===last && rh.place===last)
+      return {icon:"🥄", label:"Basement bowl"};
+    if(ra && ra.place===1 && !ra.tied)
+      return {icon:"👑", label:`${aOwn} defends first place`};
+    if(rh && rh.place===1 && !rh.tied)
+      return {icon:"👑", label:`${hOwn} defends first place`};
+    if(ra && ra.place===last && !ra.tied)
+      return {icon:"💀", label:`${aOwn} fights off last place`};
+    if(rh && rh.place===last && !rh.tied)
+      return {icon:"💀", label:`${hOwn} fights off last place`};
+  }
+  if(div) return {icon:"⚔️", label:"Division rivalry"};
+  return null;
+}
+/* The team jabs already baked into TEAMS carry the owner's name and the
+   punchline for the season — reuse them rather than write a second joke. */
+function matchupJabs(r){
+  const bits = [];
+  const ta = teamById(r.away.t.id), th = teamById(r.home.t.id);
+  if(r.away.who && ta) bits.push(`<div class="mjab"><b>${esc(r.away.who)}</b> · ${esc(ta.name)} — ${esc(ta.jab)}</div>`);
+  if(r.home.who && th) bits.push(`<div class="mjab"><b>${esc(r.home.who)}</b> · ${esc(th.name)} — ${esc(th.jab)}</div>`);
+  return bits.join("");
+}
+function matchupExtra(r, ranks, field){
+  const badge = matchupBadge(r, ranks);
+  const id = esc(String(r.g.id));
+  return `<div class="nowextra">
+    <button type="button" class="matchtoggle" data-mid="${id}" aria-expanded="false">
+      ${badge?esc(badge.icon)+" "+esc(badge.label):"Matchup notes"} <span class="chev">▾</span>
+    </button>
+    <div class="matchpanel" id="mp-${id}" hidden>
+      ${matchupJabs(r)}
+      ${field ? `<div class="fieldhost" data-fid="${id}">${fieldVisual(r.g)}</div>` : ""}
+    </div>
+  </div>`;
+}
+
+/* Field position, 0 at the away team's own goal line, 100 at the home
+   team's. ESPN's possessionText names whichever team's territory the ball
+   is in ("SEA 35"), not necessarily who has the ball. */
+function fieldPosPercent(g){
+  if(!g.spot) return null;
+  const s = g.spot.trim();
+  if(/^50$/.test(s)) return 50;
+  const m = /^([A-Za-z]{2,4})\s+(\d{1,2})$/.exec(s);
+  if(!m) return null;
+  const side = fromEspn(m[1].toUpperCase());
+  const yard = +m[2];
+  if(side === g.away.id) return yard;
+  if(side === g.home.id) return 100-yard;
+  return null;
+}
+function firstDownPercent(g, pos){
+  if(pos==null || !g.downDist || !g.ball) return null;
+  const m = /&\s*(\d+)/.exec(g.downDist);
+  if(!m) return null;
+  const dir = g.ball===g.away.espnId ? 1 : g.ball===g.home.espnId ? -1 : null;
+  if(dir==null) return null;
+  return Math.max(0, Math.min(100, pos + dir*(+m[1])));
+}
+/* The gamecast-style strip: colored end zones, yard ticks, the ball spot and
+   (once it loads) a win-probability read. Everything except win probability
+   comes from the scoreboard call already in LIVE — nothing extra to fetch. */
+function fieldVisual(g){
+  const away = teamById(g.away.id), home = teamById(g.home.id);
+  if(!away || !home) return "";
+  const pos = fieldPosPercent(g);
+  const fd = firstDownPercent(g, pos);
+  const ticks = [10,20,30,40,50,60,70,80,90].map(y=>
+    `<div class="ftick" style="left:${y}%"><span>${y<=50?y:100-y}</span></div>`).join("");
+  return `
+    <div class="fieldcard">
+      <div class="fieldtop">${esc(g.clock || g.detail || "In progress")}</div>
+      <div class="fieldmeta">
+        <div><span class="flab">Down</span><b>${g.downDist?esc(g.downDist):"—"}</b></div>
+        <div class="fdiv"></div>
+        <div><span class="flab">Ball on</span><b>${g.spot?esc(g.spot):"—"}</b></div>
+      </div>
+      <div class="fieldstrip">
+        <div class="fend" style="background:${away.c1}"><span>${esc(away.id)}</span></div>
+        <div class="fmid">${ticks}
+          ${fd!=null?`<div class="fmark ffirst" style="left:${fd}%"></div>`:""}
+          ${pos!=null?`<div class="fmark fball" style="left:${pos}%"></div>`:""}
+        </div>
+        <div class="fend" style="background:${home.c1}"><span>${esc(home.id)}</span></div>
+      </div>
+      ${g.redZone?`<div class="fieldrz">Red zone</div>`:""}
+      <div class="fieldwp" id="fwp-${esc(String(g.id))}"><span class="fwploading">Win probability — loading…</span></div>
+      ${g.lastPlay?`<div class="fieldplay">${esc(g.lastPlay)}</div>`:""}
+    </div>`;
+}
+const FIELD_WP_CACHE = new Map();
+async function loadWinProb(g){
+  const host = document.getElementById("fwp-"+g.id);
+  if(!host) return;
+  if(FIELD_WP_CACHE.has(g.id)){ paintWinProb(host, FIELD_WP_CACHE.get(g.id), g); return; }
+  try{
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${encodeURIComponent(g.id)}&_=${Date.now()}`, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const j = await res.json();
+    const wp = j.winprobability || [];
+    const lastEntry = wp.length ? wp[wp.length-1] : null;
+    const homePct = lastEntry && Number.isFinite(lastEntry.homeWinPercentage) ? lastEntry.homeWinPercentage : null;
+    FIELD_WP_CACHE.set(g.id, homePct);
+    paintWinProb(host, homePct, g);
+  }catch(e){
+    host.innerHTML = "";              // sandboxed or unreachable: quietly drop it, same as the rest of LIVE
+  }
+}
+function paintWinProb(host, homePct, g){
+  if(!host || homePct==null) { if(host) host.innerHTML=""; return; }
+  const away = teamById(g.away.id), home = teamById(g.home.id);
+  if(!away || !home) return;
+  const awayPct = 1-homePct;
+  const row = (t,p) => `<div class="fwprow"><span class="fwpteam">${esc(t.id)}</span>
+    <div class="fwpbar"><i style="width:${(p*100).toFixed(1)}%;background:${t.c1}"></i></div>
+    <span class="fwppct">${Math.round(p*100)}%</span></div>`;
+  host.innerHTML = row(away, awayPct) + row(home, homePct);
+}
+document.addEventListener("click", e=>{
+  const b = e.target.closest(".matchtoggle");
+  if(!b) return;
+  const id = b.dataset.mid;
+  const panel = document.getElementById("mp-"+id);
+  if(!panel) return;
+  const opening = panel.hidden;
+  panel.hidden = !opening;
+  b.setAttribute("aria-expanded", String(opening));
+  const chev = b.querySelector(".chev");
+  if(chev) chev.textContent = opening ? "▴" : "▾";
+  if(opening){
+    const g = (LIVE.games||[]).find(x=>String(x.id)===id);
+    if(g && g.state==="in") loadWinProb(g);
+  }
+});
+
 function nowBand(rost){
   const games = LIVE.games || [];
   if(!games.length) return "";
 
   const live = gameRows(rost, games, "in");
   const pre  = gameRows(rost, games, "pre").sort((a,b)=> new Date(a.g.date) - new Date(b.g.date));
+  const ranks = SEASON.weeks.length ? rankList(standings(rost)) : null;
 
   // everything still to be played, bucketed by kickoff
   const slots = [];
@@ -1261,16 +1453,19 @@ function nowBand(rost){
                ${r.g.redZone?`<span class="rz">red zone</span>`:""}
                ${r.g.lastPlay?`<span class="nowplay">${esc(r.g.lastPlay)}</span>`:""}
              </div>` : "";
+           const badge = matchupBadge(r, ranks);
            return `
            <div class="nowrow">
              ${side(r.away, r.home, false, true, r.g)}
              <div class="nowmid">
+               ${badge?`<div class="mbadge" title="${esc(badge.label)}">${esc(badge.icon)}</div>`:""}
                ${Number.isFinite(r.away.t.score)&&Number.isFinite(r.home.t.score)
                   ? `<div class="nowscore">${r.away.t.score} – ${r.home.t.score}</div>` : `<div class="nowscore">vs</div>`}
                ${r.g.clock ? `<div class="nowclock">${esc(r.g.clock)}</div>` : ""}
              </div>
              ${side(r.home, r.away, true, true, r.g)}
              ${sit}
+             ${matchupExtra(r, ranks, true)}
            </div>`;}).join("")}
        </div>
      </div>`;
@@ -1286,14 +1481,18 @@ function nowBand(rost){
        <div class="nowlist">
          ${slots.map((sl,gi)=>`
            <div class="nowgroup${gi===0?" first":""}"><b>${esc(clockTime(sl.at))}</b><span>${esc(relTime(sl.at))}</span></div>
-           ${sl.rows.map(r=>`
+           ${sl.rows.map(r=>{
+             const badge = matchupBadge(r, ranks);
+             return `
              <div class="nowrow">
                ${side(r.away, r.home, false, false, r.g)}
                <div class="nowmid">
+                 ${badge?`<div class="mbadge" title="${esc(badge.label)}">${esc(badge.icon)}</div>`:""}
                  <div class="nowkick">${r.g.tv?esc(r.g.tv):"at"}</div>
                </div>
                ${side(r.home, r.away, true, false, r.g)}
-             </div>`).join("")}
+               ${matchupExtra(r, ranks, false)}
+             </div>`;}).join("")}
          `).join("")}
        </div>
      </div>`;
