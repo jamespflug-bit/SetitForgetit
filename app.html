@@ -416,6 +416,11 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 /* ---------- matchup badges + expandable game detail ---------- */
 .mbadge{font-size:15px;line-height:1;text-align:center;margin-bottom:2px;cursor:default}
 .nowextra{grid-column:1/-1;margin-top:6px}
+.nowextrarow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.netbadge{
+  display:inline-flex;align-items:center;flex:0 0 auto;font-family:'IBM Plex Mono',monospace;
+  font-weight:800;font-size:8.5px;letter-spacing:.03em;padding:2px 5px;border-radius:3px;line-height:1.4;
+}
 .matchtoggle{
   display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--rule);
   border-radius:20px;padding:4px 11px;font-size:11.5px;font-weight:700;color:var(--muted);
@@ -1296,13 +1301,34 @@ function matchupJabs(r){
   if(r.home.who && th) bits.push(`<div class="mjab"><b>${esc(r.home.who)}</b> · ${esc(th.name)} — ${esc(th.jab)}</div>`);
   return bits.join("");
 }
+/* Small brand-colored chips standing in for network logos — no image assets
+   to fetch, so they never break offline or inside the artifact sandbox. */
+const NETWORKS = {
+  "CBS":{bg:"#003DA5",fg:"#fff"}, "FOX":{bg:"#000",fg:"#fff"},
+  "NBC":{bg:"#6F42C1",fg:"#fff"}, "ESPN2":{bg:"#A10024",fg:"#fff",label:"ESPN2"},
+  "ESPN":{bg:"#A10024",fg:"#fff"}, "ABC":{bg:"#000",fg:"#fff"},
+  "Prime Video":{bg:"#00A8E1",fg:"#001A2C",label:"PRIME"},
+  "Amazon":{bg:"#00A8E1",fg:"#001A2C",label:"PRIME"},
+  "NFL Network":{bg:"#013369",fg:"#fff",label:"NFLN"},
+  "Peacock":{bg:"#000",fg:"#fff",label:"PCK"}
+};
+function networkBadge(tv){
+  if(!tv) return "";
+  const key = Object.keys(NETWORKS).find(k=>tv.toLowerCase().includes(k.toLowerCase()));
+  const spec = key ? NETWORKS[key] : {bg:"var(--rule-strong)", fg:"var(--ground)"};
+  const label = (spec && spec.label) || tv;
+  return `<span class="netbadge" style="background:${spec.bg};color:${spec.fg}" title="${esc(tv)}">${esc(label)}</span>`;
+}
 function matchupExtra(r, ranks, field){
   const badge = matchupBadge(r, ranks);
   const id = esc(String(r.g.id));
   return `<div class="nowextra">
-    <button type="button" class="matchtoggle" data-mid="${id}" aria-expanded="false">
-      ${badge?esc(badge.icon)+" "+esc(badge.label):"Matchup notes"} <span class="chev">▾</span>
-    </button>
+    <div class="nowextrarow">
+      ${networkBadge(r.g.tv)}
+      <button type="button" class="matchtoggle" data-mid="${id}" aria-expanded="false">
+        ${badge?esc(badge.icon)+" "+esc(badge.label):"Matchup notes"} <span class="chev">▾</span>
+      </button>
+    </div>
     <div class="matchpanel" id="mp-${id}" hidden>
       ${matchupJabs(r)}
       ${field ? `<div class="fieldhost" data-fid="${id}">${fieldVisual(r.g)}</div>` : ""}
