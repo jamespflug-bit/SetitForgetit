@@ -414,12 +414,11 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 .nowempty{padding:14px;color:var(--muted);font-size:13.5px}
 
 /* ---------- matchup badges + expandable game detail ---------- */
-.mbadge{font-size:15px;line-height:1;text-align:center;margin-bottom:2px;cursor:default}
 .nowextra{grid-column:1/-1;margin-top:6px}
-.nowextrarow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .netbadge{
-  display:inline-flex;align-items:center;flex:0 0 auto;font-family:'IBM Plex Mono',monospace;
-  font-weight:800;font-size:8.5px;letter-spacing:.03em;padding:2px 5px;border-radius:3px;line-height:1.4;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:11px;letter-spacing:.03em;
+  padding:3px 9px;border-radius:4px;line-height:1.4;margin-bottom:3px;
 }
 .matchtoggle{
   display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--rule);
@@ -607,8 +606,7 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
   .nowclock,.nowgroup span{font-size:12px}
   .nowkick{font-size:16.5px}
   .matchtoggle{font-size:13px}
-  .netbadge{font-size:10px}
-  .mbadge{font-size:17px}
+  .netbadge{font-size:12.5px}
   .fieldmeta{font-size:14px}
   .fieldmeta b{font-size:16.5px}
   .fieldmeta .flab{font-size:11px}
@@ -1345,16 +1343,16 @@ function networkBadge(tv){
   const label = (spec && spec.label) || tv;
   return `<span class="netbadge" style="background:${spec.bg};color:${spec.fg}" title="${esc(tv)}">${esc(label)}</span>`;
 }
+/* Just the toggle now — the matchup-type icon rides on the button label,
+   small, "by the pop out." The network logo lives up in nowmid instead,
+   above the teams, where it reads at a glance. */
 function matchupExtra(r, ranks, field){
   const badge = matchupBadge(r, ranks);
   const id = esc(String(r.g.id));
   return `<div class="nowextra">
-    <div class="nowextrarow">
-      ${networkBadge(r.g.tv)}
-      <button type="button" class="matchtoggle" data-mid="${id}" aria-expanded="false">
-        ${badge?esc(badge.icon)+" "+esc(badge.label):"Matchup notes"} <span class="chev">▾</span>
-      </button>
-    </div>
+    <button type="button" class="matchtoggle" data-mid="${id}" aria-expanded="false">
+      ${badge?esc(badge.icon)+" "+esc(badge.label):"Matchup notes"} <span class="chev">▾</span>
+    </button>
     <div class="matchpanel" id="mp-${id}" hidden>
       ${matchupJabs(r)}
       ${field ? `<div class="fieldhost" data-fid="${id}">${fieldVisual(r.g)}</div>` : ""}
@@ -1505,12 +1503,11 @@ function nowBand(rost){
                ${r.g.redZone?`<span class="rz">red zone</span>`:""}
                ${r.g.lastPlay?`<span class="nowplay">${esc(r.g.lastPlay)}</span>`:""}
              </div>` : "";
-           const badge = matchupBadge(r, ranks);
            return `
            <div class="nowrow">
              ${side(r.away, r.home, false, true, r.g)}
              <div class="nowmid">
-               ${badge?`<div class="mbadge" title="${esc(badge.label)}">${esc(badge.icon)}</div>`:""}
+               ${networkBadge(r.g.tv)}
                ${Number.isFinite(r.away.t.score)&&Number.isFinite(r.home.t.score)
                   ? `<div class="nowscore">${r.away.t.score} – ${r.home.t.score}</div>` : `<div class="nowscore">vs</div>`}
                ${r.g.clock ? `<div class="nowclock">${esc(r.g.clock)}</div>` : ""}
@@ -1533,18 +1530,15 @@ function nowBand(rost){
        <div class="nowlist">
          ${slots.map((sl,gi)=>`
            <div class="nowgroup${gi===0?" first":""}"><b>${esc(clockTime(sl.at))}</b><span>${esc(relTime(sl.at))}</span></div>
-           ${sl.rows.map(r=>{
-             const badge = matchupBadge(r, ranks);
-             return `
+           ${sl.rows.map(r=>`
              <div class="nowrow">
                ${side(r.away, r.home, false, false, r.g)}
                <div class="nowmid">
-                 ${badge?`<div class="mbadge" title="${esc(badge.label)}">${esc(badge.icon)}</div>`:""}
-                 <div class="nowkick">${r.g.tv?esc(r.g.tv):"at"}</div>
+                 ${r.g.tv ? networkBadge(r.g.tv) : `<div class="nowkick">at</div>`}
                </div>
                ${side(r.home, r.away, true, false, r.g)}
                ${matchupExtra(r, ranks, false)}
-             </div>`;}).join("")}
+             </div>`).join("")}
          `).join("")}
        </div>
      </div>`;
