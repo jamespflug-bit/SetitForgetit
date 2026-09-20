@@ -741,45 +741,45 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 "use strict";
 
 const TEAMS = [
-  {id:"BUF",city:"Buffalo",name:"Bills",conf:"AFC",div:"East",w:12,l:5,t:0,post:"Lost divisional (OT at Denver)",c1:"#00338D",c2:"#C60C30",jab:"Twelve wins, then overtime in Denver. Whoever drafts them in 2026 inherits that exact heartbreak."},
-  {id:"NE",city:"New England",name:"Patriots",conf:"AFC",div:"East",w:14,l:3,t:0,post:"Lost Super Bowl LX",c1:"#002244",c2:"#C60C30",jab:"14-3 and a Lombardi. Somebody's brother is about to overpay chasing the repeat."},
-  {id:"MIA",city:"Miami",name:"Dolphins",conf:"AFC",div:"East",w:7,l:10,t:0,post:"Missed playoffs",c1:"#008E97",c2:"#FC4C02",jab:"Seven wins and a shrug — the AFC East's most reliable disappointment."},
-  {id:"NYJ",city:"New York",name:"Jets",conf:"AFC",div:"East",w:3,l:14,t:0,post:"Missed playoffs",c1:"#125740",c2:"#101820",jab:"Three wins, and someone will still draft them hoping this is the turnaround year."},
+  {id:"BUF",city:"Buffalo",name:"Bills",conf:"AFC",div:"East",w:12,l:5,t:0,post:"Lost divisional (OT at Denver)",c1:"#00338D",c2:"#C60C30",jab:"2025: 12-5, lost in overtime at Denver. Whoever drafted them for 2026 signed up for that exact gut-punch, right on schedule."},
+  {id:"NE",city:"New England",name:"Patriots",conf:"AFC",div:"East",w:14,l:3,t:0,post:"Lost Super Bowl LX",c1:"#002244",c2:"#C60C30",jab:"2025: 14-3, lost the Super Bowl. Somebody spent a big 2026 pick chasing that same magic anyway."},
+  {id:"MIA",city:"Miami",name:"Dolphins",conf:"AFC",div:"East",w:7,l:10,t:0,post:"Missed playoffs",c1:"#008E97",c2:"#FC4C02",jab:"2025: 7-10, a shrug of a season. The 2026 owner already knows exactly how this goes."},
+  {id:"NYJ",city:"New York",name:"Jets",conf:"AFC",div:"East",w:3,l:14,t:0,post:"Missed playoffs",c1:"#125740",c2:"#101820",jab:"2025: 3-14. Somebody still drafted them for 2026, insisting this is the year."},
 
-  {id:"PIT",city:"Pittsburgh",name:"Steelers",conf:"AFC",div:"North",w:10,l:7,t:0,post:"Lost wild card 30-6",c1:"#FFB612",c2:"#101820",jab:"Ten wins, then a 30-6 exit. Book the January letdown in advance."},
-  {id:"BAL",city:"Baltimore",name:"Ravens",conf:"AFC",div:"North",w:8,l:9,t:0,post:"Missed playoffs",c1:"#241773",c2:"#9E7C0C",jab:"Preseason darling, January spectator. The hype cycle resets right on schedule."},
-  {id:"CIN",city:"Cincinnati",name:"Bengals",conf:"AFC",div:"North",w:6,l:11,t:0,post:"Missed playoffs",c1:"#FB4F14",c2:"#101820",jab:"Six wins and a Burrow trade rumor before the tailgate's even cold."},
-  {id:"CLE",city:"Cleveland",name:"Browns",conf:"AFC",div:"North",w:5,l:12,t:0,post:"Missed playoffs",c1:"#311D00",c2:"#FF3C00",jab:"Still the Browns. Some brother is about to spend a real pick on this. Bless him."},
+  {id:"PIT",city:"Pittsburgh",name:"Steelers",conf:"AFC",div:"North",w:10,l:7,t:0,post:"Lost wild card 30-6",c1:"#FFB612",c2:"#101820",jab:"2025: 10-7, then a 30-6 flameout. Pencil in the same January exit for 2026."},
+  {id:"BAL",city:"Baltimore",name:"Ravens",conf:"AFC",div:"North",w:8,l:9,t:0,post:"Missed playoffs",c1:"#241773",c2:"#9E7C0C",jab:"2025: 8-9, preseason darling, January no-show. The hype train re-boards for 2026."},
+  {id:"CIN",city:"Cincinnati",name:"Bengals",conf:"AFC",div:"North",w:6,l:11,t:0,post:"Missed playoffs",c1:"#FB4F14",c2:"#101820",jab:"2025: 6-11 and a Burrow trade rumor by August. Somehow 2026 is opening the exact same way."},
+  {id:"CLE",city:"Cleveland",name:"Browns",conf:"AFC",div:"North",w:5,l:12,t:0,post:"Missed playoffs",c1:"#311D00",c2:"#FF3C00",jab:"2025: 5-12. Somebody spent a real 2026 pick on this. Respect the commitment."},
 
-  {id:"JAX",city:"Jacksonville",name:"Jaguars",conf:"AFC",div:"South",w:13,l:4,t:0,post:"Lost wild card",c1:"#006778",c2:"#D7A22A",jab:"13-4 and one and done — the prettiest trap in the league."},
-  {id:"HOU",city:"Houston",name:"Texans",conf:"AFC",div:"South",w:12,l:5,t:0,post:"Lost divisional",c1:"#03202F",c2:"#A71930",jab:"Twelve wins, one bad Sunday in the divisional round. Solid, not thrilling."},
-  {id:"IND",city:"Indianapolis",name:"Colts",conf:"AFC",div:"South",w:8,l:9,t:0,post:"Missed playoffs",c1:"#002C5F",c2:"#A2AAAD",jab:"8-9, right on brand. The definition of fine."},
-  {id:"TEN",city:"Tennessee",name:"Titans",conf:"AFC",div:"South",w:3,l:14,t:0,post:"Missed playoffs",c1:"#0C2340",c2:"#4B92DB",jab:"Three wins. Somebody's drafting them purely for the bit."},
+  {id:"JAX",city:"Jacksonville",name:"Jaguars",conf:"AFC",div:"South",w:13,l:4,t:0,post:"Lost wild card",c1:"#006778",c2:"#D7A22A",jab:"2025: 13-4, one-and-done. The prettiest trap on the 2026 board."},
+  {id:"HOU",city:"Houston",name:"Texans",conf:"AFC",div:"South",w:12,l:5,t:0,post:"Lost divisional",c1:"#03202F",c2:"#A71930",jab:"2025: 12-5, one bad Sunday in the divisional round. A safe, boring 2026 pick — nothing more."},
+  {id:"IND",city:"Indianapolis",name:"Colts",conf:"AFC",div:"South",w:8,l:9,t:0,post:"Missed playoffs",c1:"#002C5F",c2:"#A2AAAD",jab:"2025: 8-9, right on brand. Whoever owns them in 2026 signed up for 'fine.'"},
+  {id:"TEN",city:"Tennessee",name:"Titans",conf:"AFC",div:"South",w:3,l:14,t:0,post:"Missed playoffs",c1:"#0C2340",c2:"#4B92DB",jab:"2025: 3-14. Drafted for 2026 purely for the bit, presumably."},
 
-  {id:"DEN",city:"Denver",name:"Broncos",conf:"AFC",div:"West",w:14,l:3,t:0,post:"Lost AFC Championship 10-7",c1:"#FB4F14",c2:"#002244",jab:"14-3, a field goal from the Super Bowl — the 'this is the year' pick, again."},
-  {id:"LAC",city:"Los Angeles",name:"Chargers",conf:"AFC",div:"West",w:11,l:6,t:0,post:"Lost wild card 16-3",c1:"#0080C6",c2:"#FFC20E",jab:"Eleven wins, then three points in January. A vanishing act right on schedule."},
-  {id:"KC",city:"Kansas City",name:"Chiefs",conf:"AFC",div:"West",w:6,l:11,t:0,post:"Missed playoffs",c1:"#E31837",c2:"#FFB81C",jab:"Went first overall last year and won six games. Fantasy's yearly reminder that records lie."},
-  {id:"LV",city:"Las Vegas",name:"Raiders",conf:"AFC",div:"West",w:3,l:14,t:0,post:"Missed playoffs",c1:"#1B1B1B",c2:"#A5ACAF",jab:"Three wins. Someone in this family always drafts hope over data."},
+  {id:"DEN",city:"Denver",name:"Broncos",conf:"AFC",div:"West",w:14,l:3,t:0,post:"Lost AFC Championship 10-7",c1:"#FB4F14",c2:"#002244",jab:"2025: 14-3, a field goal from the Super Bowl. The 'this-is-finally-the-year' pick returns for 2026."},
+  {id:"LAC",city:"Los Angeles",name:"Chargers",conf:"AFC",div:"West",w:11,l:6,t:0,post:"Lost wild card 16-3",c1:"#0080C6",c2:"#FFC20E",jab:"2025: 11-6, then three points in the wild card. Expect the same vanishing act in 2026."},
+  {id:"KC",city:"Kansas City",name:"Chiefs",conf:"AFC",div:"West",w:6,l:11,t:0,post:"Missed playoffs",c1:"#E31837",c2:"#FFB81C",jab:"2025: took first overall, won six games. The family's annual reminder that reputation isn't a 2026 strategy."},
+  {id:"LV",city:"Las Vegas",name:"Raiders",conf:"AFC",div:"West",w:3,l:14,t:0,post:"Missed playoffs",c1:"#1B1B1B",c2:"#A5ACAF",jab:"2025: 3-14. Someone's still drafting hope over data heading into 2026."},
 
-  {id:"PHI",city:"Philadelphia",name:"Eagles",conf:"NFC",div:"East",w:11,l:6,t:0,post:"Lost wild card",c1:"#004C54",c2:"#A5ACAF",jab:"Eleven wins, one and done — all preseason hype, early exit."},
-  {id:"DAL",city:"Dallas",name:"Cowboys",conf:"NFC",div:"East",w:7,l:9,t:1,post:"Missed playoffs",c1:"#003594",c2:"#869397",jab:"A tie was the season highlight. Nothing ever changes in Dallas."},
-  {id:"WAS",city:"Washington",name:"Commanders",conf:"NFC",div:"East",w:5,l:12,t:0,post:"Missed playoffs",c1:"#5A1414",c2:"#FFB612",jab:"Five wins — the toll for owning last year's darlings."},
-  {id:"NYG",city:"New York",name:"Giants",conf:"NFC",div:"East",w:4,l:13,t:0,post:"Missed playoffs",c1:"#0B2265",c2:"#A71930",jab:"Four wins. The forced pick nobody actually wanted to make."},
+  {id:"PHI",city:"Philadelphia",name:"Eagles",conf:"NFC",div:"East",w:11,l:6,t:0,post:"Lost wild card",c1:"#004C54",c2:"#A5ACAF",jab:"2025: 11-6, one-and-done. All preseason hype, early exit — 2026's owner has been warned."},
+  {id:"DAL",city:"Dallas",name:"Cowboys",conf:"NFC",div:"East",w:7,l:9,t:1,post:"Missed playoffs",c1:"#003594",c2:"#869397",jab:"2025: a tie was the season highlight. Nothing about that changes for 2026."},
+  {id:"WAS",city:"Washington",name:"Commanders",conf:"NFC",div:"East",w:5,l:12,t:0,post:"Missed playoffs",c1:"#5A1414",c2:"#FFB612",jab:"2025: 5-12, a quiet collapse. 2026's owner is betting on a bounce-back nobody's promised."},
+  {id:"NYG",city:"New York",name:"Giants",conf:"NFC",div:"East",w:4,l:13,t:0,post:"Missed playoffs",c1:"#0B2265",c2:"#A71930",jab:"2025: 4-13. The forced pick nobody wanted, drafted again for 2026 anyway."},
 
-  {id:"CHI",city:"Chicago",name:"Bears",conf:"NFC",div:"North",w:11,l:6,t:0,post:"Lost divisional (OT)",c1:"#0B162A",c2:"#C83803",jab:"Won a wild card, folded in overtime. Progress, technically."},
-  {id:"GB",city:"Green Bay",name:"Packers",conf:"NFC",div:"North",w:9,l:7,t:1,post:"Lost wild card at home",c1:"#203731",c2:"#FFB612",jab:"Lost a home wild card game — a December fold, right on time."},
-  {id:"MIN",city:"Minnesota",name:"Vikings",conf:"NFC",div:"North",w:9,l:8,t:0,post:"Missed playoffs",c1:"#4F2683",c2:"#FFC62F",jab:"9-8, the most forgettable season money can buy."},
-  {id:"DET",city:"Detroit",name:"Lions",conf:"NFC",div:"North",w:9,l:8,t:0,post:"Missed playoffs",c1:"#0076B6",c2:"#B0B7BC",jab:"9-8. Proof that 'best roster on paper' means nothing here."},
+  {id:"CHI",city:"Chicago",name:"Bears",conf:"NFC",div:"North",w:11,l:6,t:0,post:"Lost divisional (OT)",c1:"#0B162A",c2:"#C83803",jab:"2025: won a wild card, folded in overtime. Progress, technically, heading into 2026."},
+  {id:"GB",city:"Green Bay",name:"Packers",conf:"NFC",div:"North",w:9,l:7,t:1,post:"Lost wild card at home",c1:"#203731",c2:"#FFB612",jab:"2025: lost a home wild card game. A December fold, already penciled in for 2026."},
+  {id:"MIN",city:"Minnesota",name:"Vikings",conf:"NFC",div:"North",w:9,l:8,t:0,post:"Missed playoffs",c1:"#4F2683",c2:"#FFC62F",jab:"2025: 9-8, the most forgettable season money can buy. 2026 isn't shaping up any louder."},
+  {id:"DET",city:"Detroit",name:"Lions",conf:"NFC",div:"North",w:9,l:8,t:0,post:"Missed playoffs",c1:"#0076B6",c2:"#B0B7BC",jab:"2025: 9-8. Proof that 'best roster on paper' bought nothing — a lesson for 2026's owner."},
 
-  {id:"CAR",city:"Carolina",name:"Panthers",conf:"NFC",div:"South",w:8,l:9,t:0,post:"Won NFC South, lost wild card",c1:"#0085CA",c2:"#101820",jab:"Won the division at 8-9 — the NFC South, undefeated by logic."},
-  {id:"TB",city:"Tampa Bay",name:"Buccaneers",conf:"NFC",div:"South",w:8,l:9,t:0,post:"Missed playoffs",c1:"#D50A0A",c2:"#34302B",jab:"8-9, forgettable — right on brand for the division."},
-  {id:"ATL",city:"Atlanta",name:"Falcons",conf:"NFC",div:"South",w:8,l:9,t:0,post:"Missed playoffs",c1:"#A71930",c2:"#1B1B1B",jab:"8-9 in a division where that was somehow enough."},
-  {id:"NO",city:"New Orleans",name:"Saints",conf:"NFC",div:"South",w:6,l:11,t:0,post:"Missed playoffs",c1:"#101820",c2:"#D3BC8D",jab:"Six wins. A quiet disaster, as scheduled."},
+  {id:"CAR",city:"Carolina",name:"Panthers",conf:"NFC",div:"South",w:8,l:9,t:0,post:"Won NFC South, lost wild card",c1:"#0085CA",c2:"#101820",jab:"2025: won the division at 8-9. The NFC South stays undefeated by logic in 2026."},
+  {id:"TB",city:"Tampa Bay",name:"Buccaneers",conf:"NFC",div:"South",w:8,l:9,t:0,post:"Missed playoffs",c1:"#D50A0A",c2:"#34302B",jab:"2025: 8-9, forgettable. Right on brand again for 2026."},
+  {id:"ATL",city:"Atlanta",name:"Falcons",conf:"NFC",div:"South",w:8,l:9,t:0,post:"Missed playoffs",c1:"#A71930",c2:"#1B1B1B",jab:"2025: 8-9 in a division where that was somehow enough. 2026 offers no such guarantee."},
+  {id:"NO",city:"New Orleans",name:"Saints",conf:"NFC",div:"South",w:6,l:11,t:0,post:"Missed playoffs",c1:"#101820",c2:"#D3BC8D",jab:"2025: 6-11. A quiet disaster, and 2026 isn't shaping up any louder."},
 
-  {id:"SEA",city:"Seattle",name:"Seahawks",conf:"NFC",div:"West",w:14,l:3,t:0,post:"Super Bowl LX champions",c1:"#002244",c2:"#69BE28",jab:"Super Bowl champions — and still no guarantee of a repeat."},
-  {id:"LAR",city:"Los Angeles",name:"Rams",conf:"NFC",div:"West",w:12,l:5,t:0,post:"Lost NFC Championship",c1:"#003594",c2:"#FFA300",jab:"Twelve wins and an NFC title game. So close, and still just a fantasy team."},
-  {id:"SF",city:"San Francisco",name:"49ers",conf:"NFC",div:"West",w:12,l:5,t:0,post:"Lost divisional 41-6",c1:"#AA0000",c2:"#B3995D",jab:"Twelve wins, then 41-6 in Seattle. A collapse for the ages."},
-  {id:"ARI",city:"Arizona",name:"Cardinals",conf:"NFC",div:"West",w:3,l:14,t:0,post:"Missed playoffs",c1:"#97233F",c2:"#1B1B1B",jab:"Three wins. Always sounds like a genius sleeper pick at the table — never once was."}
+  {id:"SEA",city:"Seattle",name:"Seahawks",conf:"NFC",div:"West",w:14,l:3,t:0,post:"Super Bowl LX champions",c1:"#002244",c2:"#69BE28",jab:"2025: 14-3, Super Bowl champions. In 2026 that just makes them the biggest target in the family."},
+  {id:"LAR",city:"Los Angeles",name:"Rams",conf:"NFC",div:"West",w:12,l:5,t:0,post:"Lost NFC Championship",c1:"#003594",c2:"#FFA300",jab:"2025: 12-5 and an NFC title game. So close, and still just a fantasy team going into 2026."},
+  {id:"SF",city:"San Francisco",name:"49ers",conf:"NFC",div:"West",w:12,l:5,t:0,post:"Lost divisional 41-6",c1:"#AA0000",c2:"#B3995D",jab:"2025: 12-5, then 41-6 in Seattle. 2026's owner inherits the scar tissue."},
+  {id:"ARI",city:"Arizona",name:"Cardinals",conf:"NFC",div:"West",w:3,l:14,t:0,post:"Missed playoffs",c1:"#97233F",c2:"#1B1B1B",jab:"2025: 3-14. Always sounds like a genius sleeper pick at the table — wasn't then, won't be in 2026 either."}
 ];
 
 const LAST_YEAR = {
