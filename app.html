@@ -624,7 +624,7 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
   <div class="bar">
     <div>
       <div class="eyebrow">Arkin family · 2026 season</div>
-      <div class="brandmark">Set It <em>&amp;</em> Forget It <em>·</em> Draft Board</div>
+      <div class="brandmark" id="brandmark">Set It <em>&amp;</em> Forget It <em>·</em> Draft Board</div>
     </div>
     <nav class="tabs" id="tabs">
       <button class="tab" data-tab="leader" aria-pressed="false">Leaderboard</button>
@@ -2348,6 +2348,10 @@ setInterval(()=>{
 function renderTabs(){
   const ready = seasonReady();
   const hideDraft = draftLocked();
+  const bm = document.getElementById("brandmark");
+  if(bm) bm.innerHTML = hideDraft
+    ? `Set It <em>&amp;</em> Forget It <em>·</em> Season`
+    : `Set It <em>&amp;</em> Forget It <em>·</em> Draft Board`;
   document.querySelectorAll("#tabs .tab").forEach(b=>{
     if(b.dataset.tab==="draft") b.classList.toggle("hide", hideDraft);
     const locked = (b.dataset.tab!=="draft") && !ready;
