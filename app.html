@@ -1355,8 +1355,8 @@ function matchupExtra(r, ranks, field){
       ${badge?esc(badge.icon)+" "+esc(badge.label):"Matchup notes"} <span class="chev">▾</span>
     </button>
     <div class="matchpanel" id="mp-${id}" hidden>
-      ${matchupJabs(r)}
       ${field ? `<div class="fieldhost" data-fid="${id}">${fieldVisual(r.g)}</div>` : ""}
+      ${matchupJabs(r)}
     </div>
   </div>`;
 }
