@@ -380,6 +380,7 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 .nowside.r .nowteam{flex-direction:row-reverse}
 .nowteam i{width:8px;height:14px;border-radius:2px;flex:0 0 auto}
 .nowteam span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nowrec{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--muted);flex:0 0 auto;opacity:.85}
 .nowmid{text-align:center;white-space:nowrap;min-width:96px}
 .nowscore{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:21px;line-height:1}
 .nowclock{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
@@ -1483,7 +1484,7 @@ function nowBand(rost){
     const hasBall = liveGame && g && g.ball && g.ball === sd.t.espnId;
     return `<div class="nowside${right?" r":""}${lead?" lead":""}${sd.who?"":" none"}">
       <div class="nowwho">${esc(sd.who || "unowned")}</div>
-      <div class="nowteam">${t?`<i style="background:${t.c1}"></i>`:""}<span>${esc(sd.t.name)}</span>${hasBall?`<span class="ball" title="has the ball"></span>`:""}</div>
+      <div class="nowteam">${t?`<i style="background:${t.c1}"></i>`:""}<span>${esc(sd.t.name)}</span>${SEASON.weeks.length?`<span class="nowrec">${esc(teamRecord(sd.t.id))}</span>`:""}${hasBall?`<span class="ball" title="has the ball"></span>`:""}</div>
     </div>`;
   };
 
