@@ -297,6 +297,11 @@ input{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ---------- season & leaderboard ---------- */
 .seasonwrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px}
+/* On a full-width desktop browser this column otherwise stretches edge to
+   edge, stranding the record/pick-number side of each row far from its
+   name. Cap it like the draft setup screen already does (.setup) and
+   center it — phone widths (the media query below) are untouched. */
+@media (min-width:1101px){ .seasonwrap{width:min(1100px,100%);margin:0 auto} }
 .locked-note{
   flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
   text-align:center;padding:40px 20px;color:var(--muted);
