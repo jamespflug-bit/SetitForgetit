@@ -1159,7 +1159,8 @@ async function loadLiveSeason(){
 
   const recaps = SEASON.recaps || {};
   SEASON.weeks = weeks.map(w=>({
-    n:w.n, through:w.through, results:w.results,
+    n:w.n, through:w.through, results:w.results, games:w.games,
+    done:w.done, inProgress:w.inProgress, scheduled:w.scheduled, complete:w.complete,
     recap: recaps[String(w.n)] || (SEASON.weeks.find(x=>x.n===w.n)||{}).recap || autoRecap(w)
   }));
   LIVE = {on:true, at:new Date(), inProgress, scheduled, error:null, games, week:gweek, wk:wkTally};
@@ -1687,8 +1688,10 @@ function renderSeason(){
          <div class="phead"><h2>Week ${wk.n}</h2><span class="note">best to worst</span><div class="spacer"></div>${liveBadge()}</div>
          <div class="wkrows">
            ${rows.map(r=>{
-             const teams = (rost.rosters[r.nm]||[]).map(id=>teamMark(id,wk)).join(" · ");
-             const nameBlock = wk.complete
+             const active = (wk.done>0 || wk.inProgress>0);
+             const teams = (rost.rosters[r.nm]||[])
+               .map(id=>active ? teamGameLine(id,wk) : teamMark(id,wk)).join(" · ");
+             const nameBlock = active
                ? `<button type="button" class="wknametoggle" data-wkid="${esc(r.nm)}" aria-expanded="false">
                     <span class="wkname">${esc(r.nm)}</span><span class="chev">▾</span>
                   </button>
@@ -1729,6 +1732,26 @@ function teamMark(id, wk){
     mark = "●";
   }
   return `${esc(t.name)} ${mark}`;
+}
+/* The expanded-on-click line: opponent and score, not just a checkmark.
+   wk.games only survives for the week currently being played — a fully
+   finished week is re-cached without it to save space — so this quietly
+   falls back to the plain teamMark() once that detail is gone. */
+function teamGameLine(id, wk){
+  const t=teamById(id); if(!t) return "";
+  const g = (wk.games||[]).find(x=>x.home && x.away && (x.home.id===id || x.away.id===id));
+  if(!g) return teamMark(id, wk);
+  const home = g.home.id===id, me = home?g.home:g.away, opp = home?g.away:g.home;
+  const vs = home ? "vs" : "at";
+  if(g.state === "post"){
+    const r = wk.results ? wk.results[id] : null;
+    const mark = r==="W" ? "✓" : r==="L" ? "✕" : r==="T" ? "=" : "–";
+    return `${esc(t.name)} ${mark} ${me.score}–${opp.score} ${vs} ${esc(opp.name)}`;
+  }
+  if(g.state === "in"){
+    return `${esc(t.name)} ● ${me.score}–${opp.score} ${vs} ${esc(opp.name)} · ${esc(g.clock||"live")}`;
+  }
+  return `${esc(t.name)} – ${vs} ${esc(opp.name)}`;
 }
 function seasonTable(rost){
   const weeks = SEASON.weeks.map(w=>w.n);
