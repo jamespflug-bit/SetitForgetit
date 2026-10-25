@@ -478,6 +478,14 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 .wkrank{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:26px;color:var(--muted);text-align:center}
 .wkname{font-family:'Big Shoulders Display','Archivo',sans-serif;font-weight:800;font-size:clamp(26px,1.85vw,34px);line-height:1;text-transform:uppercase}
 .wkteams{font-size:12.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden}
+.wknametoggle{
+  display:flex;align-items:center;gap:7px;background:transparent;border:0;padding:0;margin:0;
+  text-align:left;cursor:pointer;color:inherit;font:inherit;max-width:100%;
+}
+.wknametoggle .chev{font-size:13px;color:var(--muted);flex:0 0 auto;transition:transform .15s}
+.wknametoggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.wknametoggle:hover .wkname{color:var(--ink-soft)}
+.wkteams.wkresults{white-space:normal;margin-top:4px}
 .wkrec{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:clamp(28px,2.2vw,40px);text-align:right;line-height:1}
 .wkrec small{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;font-family:'Archivo',sans-serif}
 
@@ -1466,6 +1474,17 @@ document.addEventListener("click", e=>{
     if(g && g.state==="in") loadWinProb(g);
   }
 });
+document.addEventListener("click", e=>{
+  const b = e.target.closest(".wknametoggle");
+  if(!b) return;
+  const panel = document.getElementById("wkres-"+b.dataset.wkid);
+  if(!panel) return;
+  const opening = panel.hidden;
+  panel.hidden = !opening;
+  b.setAttribute("aria-expanded", String(opening));
+  const chev = b.querySelector(".chev");
+  if(chev) chev.textContent = opening ? "▴" : "▾";
+});
 
 function nowBand(rost){
   const games = LIVE.games || [];
@@ -1667,15 +1686,23 @@ function renderSeason(){
        <section class="panel">
          <div class="phead"><h2>Week ${wk.n}</h2><span class="note">best to worst</span><div class="spacer"></div>${liveBadge()}</div>
          <div class="wkrows">
-           ${rows.map((r,i)=>`
+           ${rows.map(r=>{
+             const teams = (rost.rosters[r.nm]||[]).map(id=>teamMark(id,wk)).join(" · ");
+             const nameBlock = wk.complete
+               ? `<button type="button" class="wknametoggle" data-wkid="${esc(r.nm)}" aria-expanded="false">
+                    <span class="wkname">${esc(r.nm)}</span><span class="chev">▾</span>
+                  </button>
+                  <div class="wkteams wkresults" id="wkres-${esc(r.nm)}" hidden>${teams}</div>`
+               : `<div class="wkname">${esc(r.nm)}</div>
+                  <div class="wkteams">${teams}</div>`;
+             return `
              <div class="wkrow ${r.r.w>r.r.l?"win":r.r.w<r.r.l?"loss":""}">
                <div class="wkrank">${rankMark(r)}</div>
                <div>
-                 <div class="wkname">${esc(r.nm)}</div>
-                 <div class="wkteams">${(rost.rosters[r.nm]||[]).map(id=>teamMark(id,wk)).join(" · ")}</div>
+                 ${nameBlock}
                </div>
                <div class="wkrec">${r.r.str}<small>${r.tr.str} overall</small></div>
-             </div>`).join("")}
+             </div>`;}).join("")}
          </div>
        </section>
        <section class="panel">
