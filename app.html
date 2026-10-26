@@ -465,8 +465,8 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 .seasonmain{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:10px}
 .wkrows{flex:1 1 auto;min-height:0;overflow:auto;padding:6px 8px;display:flex;flex-direction:column;gap:5px}
 .wkrow{
-  display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;
-  border-radius:4px;padding:6px 10px 6px 14px;border:1px solid var(--rule);background:var(--ground);
+  display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:start;gap:10px;
+  border-radius:4px;padding:10px 10px 10px 14px;border:1px solid var(--rule);background:var(--ground);
   flex:1 1 auto;min-height:56px;overflow:hidden;
 }
 .wkrow{position:relative}
@@ -485,7 +485,12 @@ body.page-scroll .gridscroll{overflow-x:auto;overflow-y:visible}
 .wknametoggle .chev{font-size:13px;color:var(--muted);flex:0 0 auto;transition:transform .15s}
 .wknametoggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .wknametoggle:hover .wkname{color:var(--ink-soft)}
-.wkteams.wkresults{white-space:normal;margin-top:4px}
+.wkteams.wkresults{
+  display:flex;flex-direction:column;gap:5px;white-space:normal;overflow:visible;
+  margin-top:6px;text-transform:none;letter-spacing:0;font-weight:500;
+}
+.wkgameline{line-height:1.35;padding-top:5px;border-top:1px solid var(--rule)}
+.wkgameline:first-child{padding-top:0;border-top:0}
 .wkrec{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:clamp(28px,2.2vw,40px);text-align:right;line-height:1}
 .wkrec small{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;font-family:'Archivo',sans-serif}
 
@@ -1689,8 +1694,10 @@ function renderSeason(){
          <div class="wkrows">
            ${rows.map(r=>{
              const active = (wk.done>0 || wk.inProgress>0);
-             const teams = (rost.rosters[r.nm]||[])
-               .map(id=>active ? teamGameLine(id,wk) : teamMark(id,wk)).join(" · ");
+             const teamIds = rost.rosters[r.nm]||[];
+             const teams = active
+               ? teamIds.map(id=>`<div class="wkgameline">${teamGameLine(id,wk)}</div>`).join("")
+               : teamIds.map(id=>teamMark(id,wk)).join(" · ");
              const nameBlock = active
                ? `<button type="button" class="wknametoggle" data-wkid="${esc(r.nm)}" aria-expanded="false">
                     <span class="wkname">${esc(r.nm)}</span><span class="chev">▾</span>
